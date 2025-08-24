@@ -55,7 +55,7 @@ export const ChatList: React.FC<ChatListProps> = ({
                   <div className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${chat.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                     {chat.unread > 0 && (
-                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                      <span className="bg-green-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                         {chat.unread}
                       </span>
                     )}
