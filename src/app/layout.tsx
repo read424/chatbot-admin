@@ -5,10 +5,20 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Panel de Inbox - Chatbot Admin',
-  description: 'Panel de administración tipo WhatsApp Web para equipos de ventas',
-  keywords: ['chat', 'whatsapp', 'inbox', 'ventas', 'crm'],
+    title: 'Panel de Inbox - Chatbot Admin',
+    description: 'Panel de administración tipo WhatsApp Web para equipos de ventas',
+    keywords: ['chat', 'whatsapp', 'inbox', 'ventas', 'crm'],
 };
+  
+const themeScript = `
+  try {
+    const theme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (theme === 'dark' || (!theme && prefersDark)) {
+      document.documentElement.classList.add('dark');
+    }
+  } catch (e) {}
+`;
 
 export default function RootLayout({
   children,
@@ -16,10 +26,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+        <head>
+            <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        </head>
       <body className={inter.className}>
         <div id="root">
-          {children}
+            {children}
         </div>
       </body>
     </html>
