@@ -14,26 +14,30 @@ import { DepartmentModal } from './DepartmentModal';
 import { DepartmentStats } from './DepartmentStats';
 
 export const DepartmentManagement: React.FC = () => {
-  const {
-    departments,
-    isLoading,
-    error,
-    fetchDepartments,
-    clearError,
-    getDepartmentStats
-  } = useDepartmentStore();
+    const {
+        departments,
+        isLoading,
+        error,
+        fetchDepartments,
+        clearError,
+        getDepartmentStats
+    } = useDepartmentStore();
 
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [showModal, setShowModal] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+    const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
-  const stats = getDepartmentStats();
+    const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, totalUsers: 0 });
 
-  useEffect(() => {
-    fetchDepartments();
-  }, [fetchDepartments]);
+    useEffect(() => {
+        fetchDepartments();
+    }, [fetchDepartments]);
+
+    useEffect(() => {
+        setStats(getDepartmentStats());
+    }, [departments, getDepartmentStats]);
 
   // Filter departments
   const filteredDepartments = departments.filter(dept => {

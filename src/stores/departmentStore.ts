@@ -105,8 +105,8 @@ const defaultVariables: DepartmentVariable[] = [
   }
 ];
 
-// Datos iniciales
-const initialDepartments: Department[] = [
+// Función para obtener datos iniciales consistentes
+const getInitialDepartments = (): Department[] => [
   {
     id: '1',
     name: 'Ventas',
@@ -218,7 +218,7 @@ const initialDepartments: Department[] = [
 
 export const useDepartmentStore = create<DepartmentState>((set, get) => ({
   // Initial state
-  departments: initialDepartments,
+  departments: getInitialDepartments(),
   selectedDepartment: null,
   isLoading: false,
   error: null,
