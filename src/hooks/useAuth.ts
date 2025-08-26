@@ -1,6 +1,7 @@
 'use client';
 
-import { useAuthStore, type User } from '@/stores/authStore';
+import type { User } from '@/lib/api/types';
+import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -18,22 +19,29 @@ export const useAuth = () => {
 
   const router = useRouter();
 
-  // Verificar persistencia al cargar
+  // Verificar persistencia al cargar (solo en el cliente)
   useEffect(() => {
     const checkAuth = () => {
+      // Verificar que estamos en el cliente
+      if (typeof window === 'undefined') return;
+      
       try {
         const savedUser = localStorage.getItem('user');
-        const savedAuth = localStorage.getItem('isAuthenticated');
+        const savedToken = localStorage.getItem('token');
 
-        if (savedUser && savedAuth === 'true') {
+        // Verificar si hay usuario y token (del authService o del store)
+        if (savedUser && (savedToken || localStorage.getItem('isAuthenticated') === 'true')) {
           const userData: User = JSON.parse(savedUser);
           setUser(userData);
         }
       } catch (error) {
         console.error('Error loading auth state:', error);
         // Si hay error, limpiar storage corrupto
-        localStorage.removeItem('user');
-        localStorage.removeItem('isAuthenticated');
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('token');
+        }
       }
     };
 
@@ -52,6 +60,10 @@ export const useAuth = () => {
   // Logout con redirección
   const handleLogout = () => {
     logout();
+    // También limpiar token del authService (solo en el cliente)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
     router.push('/login');
   };
 

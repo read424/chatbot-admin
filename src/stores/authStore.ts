@@ -1,14 +1,7 @@
 'use client';
 
+import type { User } from '@/lib/api/types';
 import { create } from 'zustand';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'agent' | 'supervisor';
-  avatar?: string;
-}
 
 interface AuthState {
   // State
@@ -29,34 +22,52 @@ const demoUsers: Record<string, { password: string; user: User }> = {
   'admin@inbox.com': {
     password: 'admin123',
     user: {
-      id: '1',
+      id: 'admin-001',
       email: 'admin@inbox.com',
       name: 'Admin Usuario',
-      role: 'admin'
+      role: 'admin',
+      department: 'Administración',
+      isActive: true,
+      permissions: ['all'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
     }
   },
   'agente@inbox.com': {
     password: 'agente123',
     user: {
-      id: '2',
+      id: 'agent-001',
       email: 'agente@inbox.com',
       name: 'Juan Pérez',
-      role: 'agent'
+      role: 'agent',
+      department: 'Ventas',
+      isActive: true,
+      permissions: ['chat', 'view_stats'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
     }
   },
   'supervisor@inbox.com': {
     password: 'supervisor123',
     user: {
-      id: '3',
+      id: 'supervisor-001',
       email: 'supervisor@inbox.com',
       name: 'Ana López',
-      role: 'supervisor'
+      role: 'supervisor',
+      department: 'Supervisión',
+      isActive: true,
+      permissions: ['chat', 'manage_users', 'view_reports'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
     }
   }
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
-  // Initial state
+  // Initial state - Asegurar consistencia entre servidor y cliente
   user: null,
   isAuthenticated: false,
   isLoading: false,
@@ -88,9 +99,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null
       });
 
-      // Guardar en localStorage para persistencia
-      localStorage.setItem('user', JSON.stringify(demoUser.user));
-      localStorage.setItem('isAuthenticated', 'true');
+      // Guardar en localStorage para persistencia (solo en el cliente)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(demoUser.user));
+        localStorage.setItem('isAuthenticated', 'true');
+      }
 
       return true;
     } catch (error) {
@@ -110,9 +123,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       error: null
     });
 
-    // Limpiar localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('isAuthenticated');
+    // Limpiar localStorage (solo en el cliente)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+    }
   },
 
   // Clear error
