@@ -1,3 +1,4 @@
+import { SocketIOProvider } from '@/contexts/SocketIOContext';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -31,9 +32,11 @@ export default function RootLayout({
             <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         </head>
       <body className={inter.className}>
-        <div id="root">
-            {children}
-        </div>
+        <SocketIOProvider>
+            <div id="root">
+                {children}
+            </div>
+        </SocketIOProvider>
       </body>
     </html>
   );
