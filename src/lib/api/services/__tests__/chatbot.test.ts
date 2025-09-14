@@ -28,6 +28,13 @@ describe('ChatbotService', () => {
     jest.clearAllMocks();
   });
 
+  const createMockResponse = (data: any) => ({
+    data,
+    status: 200,
+    statusText: 'OK',
+    headers: new Headers()
+  });
+
   const mockChatbotConfig: ChatbotConfig = {
     id: '1',
     connectionId: 'conn-1',
@@ -85,28 +92,24 @@ describe('ChatbotService', () => {
 
   describe('Chatbot Configuration Operations', () => {
     it('should get chatbot configs', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: [mockChatbotConfig],
-          total: 1
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: [mockChatbotConfig],
+        total: 1
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotConfigs();
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs', { params: undefined });
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs', undefined);
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should get chatbot config by id', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotConfig('1');
@@ -116,12 +119,10 @@ describe('ChatbotService', () => {
     });
 
     it('should get chatbot config by connection id', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotConfigByConnection('conn-1');
@@ -137,12 +138,10 @@ describe('ChatbotService', () => {
         isEnabled: true
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.createChatbotConfig(createRequest);
@@ -157,12 +156,10 @@ describe('ChatbotService', () => {
         fallbackMessage: 'Updated fallback message'
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotConfig, fallbackMessage: 'Updated fallback message' }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotConfig, fallbackMessage: 'Updated fallback message' }
+      });
       mockApiClient.put.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.updateChatbotConfig(updateRequest);
@@ -172,9 +169,7 @@ describe('ChatbotService', () => {
     });
 
     it('should delete chatbot config', async () => {
-      const mockResponse = {
-        data: { success: true }
-      };
+      const mockResponse = createMockResponse({ success: true });
       mockApiClient.delete.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.deleteChatbotConfig('1');
@@ -184,12 +179,10 @@ describe('ChatbotService', () => {
     });
 
     it('should toggle chatbot config', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotConfig, isEnabled: false }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotConfig, isEnabled: false }
+      });
       mockApiClient.patch.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.toggleChatbotConfig('1', false);
@@ -201,28 +194,24 @@ describe('ChatbotService', () => {
 
   describe('Chatbot Rules Operations', () => {
     it('should get chatbot rules', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: [mockChatbotRule],
-          total: 1
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: [mockChatbotRule],
+        total: 1
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotRules('1');
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs/1/rules', { params: undefined });
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs/1/rules', undefined);
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should get chatbot rule by id', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotRule
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotRule
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotRule('1', 'rule-1');
@@ -248,12 +237,10 @@ describe('ChatbotService', () => {
         channels: ['whatsapp']
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotRule
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotRule
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.createChatbotRule(createRequest);
@@ -268,12 +255,10 @@ describe('ChatbotService', () => {
         name: 'Updated Rule Name'
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotRule, name: 'Updated Rule Name' }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotRule, name: 'Updated Rule Name' }
+      });
       mockApiClient.put.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.updateChatbotRule('1', updateRequest);
@@ -283,9 +268,7 @@ describe('ChatbotService', () => {
     });
 
     it('should delete chatbot rule', async () => {
-      const mockResponse = {
-        data: { success: true }
-      };
+      const mockResponse = createMockResponse({ success: true });
       mockApiClient.delete.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.deleteChatbotRule('1', 'rule-1');
@@ -295,12 +278,10 @@ describe('ChatbotService', () => {
     });
 
     it('should toggle chatbot rule', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotRule, isActive: false }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotRule, isActive: false }
+      });
       mockApiClient.patch.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.toggleChatbotRule('1', 'rule-1', false);
@@ -311,9 +292,7 @@ describe('ChatbotService', () => {
 
     it('should reorder chatbot rules', async () => {
       const ruleIds = ['rule-1', 'rule-2', 'rule-3'];
-      const mockResponse = {
-        data: { success: true }
-      };
+      const mockResponse = createMockResponse({ success: true });
       mockApiClient.patch.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.reorderChatbotRules('1', ruleIds);
@@ -331,15 +310,13 @@ describe('ChatbotService', () => {
         channel: 'whatsapp'
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          matchedRule: mockChatbotRule,
-          response: mockChatbotRule.response,
-          shouldTransfer: false,
-          processingTime: 50
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        matchedRule: mockChatbotRule,
+        response: mockChatbotRule.response,
+        shouldTransfer: false,
+        processingTime: 50
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.testChatbotRule(testRequest);
@@ -349,12 +326,10 @@ describe('ChatbotService', () => {
     });
 
     it('should validate chatbot config', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          errors: []
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        errors: []
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.validateChatbotConfig('1');
@@ -364,12 +339,10 @@ describe('ChatbotService', () => {
     });
 
     it('should duplicate chatbot rule', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotRule, id: 'rule-2', name: 'Duplicated Rule' }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotRule, id: 'rule-2', name: 'Duplicated Rule' }
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.duplicateChatbotRule('1', 'rule-1', 'Duplicated Rule');
@@ -392,27 +365,23 @@ describe('ChatbotService', () => {
         channelBreakdown: []
       };
 
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockAnalytics
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockAnalytics
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.getChatbotAnalytics('1', period);
 
-      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs/1/analytics', { params: period });
+      expect(mockApiClient.get).toHaveBeenCalledWith('/api/chatbot/configs/1/analytics', { from: '2024-01-01', to: '2024-01-31' });
       expect(result).toEqual(mockResponse.data);
     });
 
     it('should export chatbot config', async () => {
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.get.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.exportChatbotConfig('1');
@@ -423,12 +392,10 @@ describe('ChatbotService', () => {
 
     it('should import chatbot config', async () => {
       const config = { fallbackMessage: 'Imported config' };
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.post.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.importChatbotConfig('conn-1', config);
@@ -444,12 +411,10 @@ describe('ChatbotService', () => {
   describe('Working Hours and Settings Management', () => {
     it('should update working hours', async () => {
       const workingHours = mockChatbotConfig.workingHours;
-      const mockResponse = {
-        data: {
-          success: true,
-          data: mockChatbotConfig
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: mockChatbotConfig
+      });
       mockApiClient.patch.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.updateWorkingHours('1', workingHours);
@@ -460,12 +425,10 @@ describe('ChatbotService', () => {
 
     it('should update chatbot settings', async () => {
       const settings = { responseDelay: 2000 };
-      const mockResponse = {
-        data: {
-          success: true,
-          data: { ...mockChatbotConfig, settings: { ...mockChatbotConfig.settings, responseDelay: 2000 } }
-        }
-      };
+      const mockResponse = createMockResponse({
+        success: true,
+        data: { ...mockChatbotConfig, settings: { ...mockChatbotConfig.settings, responseDelay: 2000 } }
+      });
       mockApiClient.patch.mockResolvedValue(mockResponse);
 
       const result = await ChatbotService.updateChatbotSettings('1', settings);
