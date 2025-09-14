@@ -3,7 +3,7 @@
 import type { User } from '@/lib/api/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export const useAuth = () => {
   const {
@@ -32,44 +32,101 @@ export const useAuth = () => {
       try {
         const savedUser = localStorage.getItem('user');
         const savedToken = localStorage.getItem('token');
+        const sessionExpiry = localStorage.getItem('sessionExpiry');
 
         // Verificar si hay usuario y token (del authService o del store)
         if (savedUser && (savedToken || localStorage.getItem('isAuthenticated') === 'true')) {
-          const userData: User = JSON.parse(savedUser);
-          setUser(userData);
+          // Verificar si la sesión no ha expirado
+          if (sessionExpiry && new Date(sessionExpiry) > new Date()) {
+            const userData: User = JSON.parse(savedUser);
+            setUser(userData);
+          } else {
+            // Sesión expirada, limpiar
+            clearExpiredSession();
+          }
         }
       } catch (error) {
         console.error('Error loading auth state:', error);
         // Si hay error, limpiar storage corrupto
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('user');
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('token');
-        }
+        clearExpiredSession();
       }
     };
 
     checkAuth();
   }, [setUser]);
 
-  // Login con redirección
-  const handleLogin = async (email: string, password: string): Promise<boolean> => {
+  // Limpiar sesión expirada
+  const clearExpiredSession = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('token');
+      localStorage.removeItem('sessionExpiry');
+      localStorage.removeItem('rememberMe');
+    }
+  }, []);
+
+  // Login con redirección y gestión de sesión
+  const handleLogin = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
     const success = await login(email, password);
     if (success) {
+      // Establecer expiración de sesión
+      const sessionDuration = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000; // 30 días o 8 horas
+      const expiry = new Date(Date.now() + sessionDuration);
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sessionExpiry', expiry.toISOString());
+      }
+      
       router.push('/dashboard');
     }
     return success;
   };
 
-  // Logout con redirección
+  // Logout con redirección y limpieza de sesión
   const handleLogout = () => {
     logout();
-    // También limpiar token del authService (solo en el cliente)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-    }
+    clearExpiredSession();
     router.push('/login');
   };
+
+  // Extender sesión
+  const extendSession = useCallback((rememberMe: boolean = false) => {
+    if (typeof window !== 'undefined') {
+      const sessionDuration = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000;
+      const expiry = new Date(Date.now() + sessionDuration);
+      localStorage.setItem('sessionExpiry', expiry.toISOString());
+    }
+  }, []);
+
+  // Verificar si la sesión está próxima a expirar
+  const isSessionExpiring = useCallback((): boolean => {
+    if (typeof window === 'undefined') return false;
+    
+    const sessionExpiry = localStorage.getItem('sessionExpiry');
+    if (!sessionExpiry) return false;
+    
+    const expiry = new Date(sessionExpiry);
+    const now = new Date();
+    const timeUntilExpiry = expiry.getTime() - now.getTime();
+    
+    // Considerar que está expirando si quedan menos de 5 minutos
+    return timeUntilExpiry < 5 * 60 * 1000;
+  }, []);
+
+  // Obtener tiempo restante de sesión
+  const getSessionTimeRemaining = useCallback((): number => {
+    if (typeof window === 'undefined') return 0;
+    
+    const sessionExpiry = localStorage.getItem('sessionExpiry');
+    if (!sessionExpiry) return 0;
+    
+    const expiry = new Date(sessionExpiry);
+    const now = new Date();
+    const timeUntilExpiry = expiry.getTime() - now.getTime();
+    
+    return Math.max(0, timeUntilExpiry / (1000 * 60)); // en minutos
+  }, []);
 
   // Verificar si el usuario tiene permisos
   const hasPermission = (requiredRole?: 'admin' | 'agent' | 'supervisor'): boolean => {
@@ -106,10 +163,13 @@ export const useAuth = () => {
     login: handleLogin,
     logout: handleLogout,
     clearError,
+    extendSession,
 
     // Utilities
     hasPermission: mounted ? hasPermission : () => false,
     requireAuth,
+    isSessionExpiring: mounted ? isSessionExpiring : () => false,
+    getSessionTimeRemaining: mounted ? getSessionTimeRemaining : () => 0,
     
     // User info
     userName: user?.name || 'Usuario',
