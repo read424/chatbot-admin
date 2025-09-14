@@ -11,21 +11,15 @@ export default function ChatbotPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadConnections();
-  }, [loadConnections]);
-
   const loadConnections = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await connectionsService.getConnections();
-      if (response.success) {
-        setConnections(response.data);
-        // Auto-select first connection if available
-        if (response.data.length > 0 && !selectedConnectionId) {
-          setSelectedConnectionId(response.data[0].id);
-        }
+      const connections = await connectionsService.getConnections();
+      setConnections(connections);
+      // Auto-select first connection if available
+      if (connections.length > 0 && !selectedConnectionId) {
+        setSelectedConnectionId(connections[0].id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error loading connections');
@@ -33,6 +27,10 @@ export default function ChatbotPage() {
       setLoading(false);
     }
   }, [selectedConnectionId]);
+
+  useEffect(() => {
+    loadConnections();
+  }, [loadConnections]);
 
   if (loading) {
     return (
@@ -110,16 +108,14 @@ export default function ChatbotPage() {
                 <button
                   key={connection.id}
                   onClick={() => setSelectedConnectionId(connection.id)}
-                  className={`${
-                    selectedConnectionId === connection.id
-                      ? 'ring-2 ring-blue-500 border-blue-500'
-                      : 'border-gray-300 hover:border-gray-400'
-                  } relative rounded-lg border p-4 flex flex-col items-start text-left focus:outline-none`}
+                  className={`${selectedConnectionId === connection.id
+                    ? 'ring-2 ring-blue-500 border-blue-500'
+                    : 'border-gray-300 hover:border-gray-400'
+                    } relative rounded-lg border p-4 flex flex-col items-start text-left focus:outline-none`}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`flex-shrink-0 w-3 h-3 rounded-full ${
-                      connection.isActive ? 'bg-green-400' : 'bg-gray-400'
-                    }`}></div>
+                    <div className={`flex-shrink-0 w-3 h-3 rounded-full ${connection.isActive ? 'bg-green-400' : 'bg-gray-400'
+                      }`}></div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
                         {connection.name}

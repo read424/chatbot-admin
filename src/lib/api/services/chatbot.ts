@@ -1,7 +1,6 @@
 import { apiClient } from '../client';
 import {
   ChatbotConfig,
-  ChatbotRule,
   CreateChatbotConfigRequest,
   UpdateChatbotConfigRequest,
   CreateChatbotRuleRequest,
@@ -21,7 +20,15 @@ export class ChatbotService {
 
   // Chatbot Configuration CRUD operations
   static async getChatbotConfigs(params?: PaginationParams): Promise<ChatbotConfigsListResponse> {
-    const response = await apiClient.get(`${this.BASE_PATH}/configs`, { params });
+    const queryParams = params ? {
+      page: params.page?.toString() || '1',
+      limit: params.limit?.toString() || '10',
+      ...(params.search && { search: params.search }),
+      ...(params.sortBy && { sortBy: params.sortBy }),
+      ...(params.sortOrder && { sortOrder: params.sortOrder })
+    } : undefined;
+    
+    const response = await apiClient.get(`${this.BASE_PATH}/configs`, queryParams);
     return response.data;
   }
 
@@ -57,7 +64,15 @@ export class ChatbotService {
 
   // Chatbot Rules CRUD operations
   static async getChatbotRules(configId: string, params?: PaginationParams): Promise<ChatbotRulesListResponse> {
-    const response = await apiClient.get(`${this.BASE_PATH}/configs/${configId}/rules`, { params });
+    const queryParams = params ? {
+      page: params.page?.toString() || '1',
+      limit: params.limit?.toString() || '10',
+      ...(params.search && { search: params.search }),
+      ...(params.sortBy && { sortBy: params.sortBy }),
+      ...(params.sortOrder && { sortOrder: params.sortOrder })
+    } : undefined;
+    
+    const response = await apiClient.get(`${this.BASE_PATH}/configs/${configId}/rules`, queryParams);
     return response.data;
   }
 
@@ -120,7 +135,8 @@ export class ChatbotService {
     data: ChatbotAnalytics;
   }> {
     const response = await apiClient.get(`${this.BASE_PATH}/configs/${configId}/analytics`, {
-      params: period
+      from: period.from,
+      to: period.to
     });
     return response.data;
   }
