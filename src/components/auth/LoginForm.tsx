@@ -1,10 +1,15 @@
 'use client';
 
+import { useLoginAttempts } from '@/hooks/useLoginAttempts';
+import { useRememberMe } from '@/hooks/useRememberMe';
 import { ApiError } from '@/lib/api';
 import { authService } from '@/lib/api/auth';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from 'lucide-react';
+import { validatePasswordStrength } from '@/utils/passwordValidation';
+import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { AccountLockoutWarning } from './AccountLockoutWarning';
+import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 export const LoginForm: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -13,9 +18,45 @@ export const LoginForm: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>('');
     const [rememberMe, setRememberMe] = useState(false);
-
+    const [showPasswordStrength, setShowPasswordStrength] = useState(false);
+    const [isCheckingAccount, setIsCheckingAccount] = useState(false);
 
     const router = useRouter();
+    
+    // Hooks de seguridad
+    const {
+        isAccountLocked,
+        getLockoutTimeRemaining,
+        recordFailedAttempt,
+        clearAttempts,
+        getAttemptInfo
+    } = useLoginAttempts();
+
+    const {
+        saveRememberMe,
+        clearRememberMe,
+        getRememberedEmail,
+        getRememberedToken,
+        hasValidRememberMe
+    } = useRememberMe();
+
+    // Cargar email recordado al inicializar
+    useEffect(() => {
+        const rememberedEmail = getRememberedEmail();
+        if (rememberedEmail) {
+            setEmail(rememberedEmail);
+            setRememberMe(true);
+        }
+    }, [getRememberedEmail]);
+
+    // Verificar estado de la cuenta cuando cambia el email
+    useEffect(() => {
+        if (email) {
+            setIsCheckingAccount(true);
+            const attemptInfo = getAttemptInfo(email);
+            setIsCheckingAccount(false);
+        }
+    }, [email, getAttemptInfo]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,21 +64,47 @@ export const LoginForm: React.FC = () => {
         setError('');
 
         try {
+            // Verificar si la cuenta está bloqueada
+            if (isAccountLocked(email)) {
+                const lockoutTime = getLockoutTimeRemaining(email);
+                setError(`Cuenta bloqueada. Intenta nuevamente en ${lockoutTime} minutos.`);
+                setLoading(false);
+                return;
+            }
+
             const response = await authService.login({ email, password });
             
             console.log('Login exitoso:', response);
+            
+            // Limpiar intentos fallidos en caso de éxito
+            clearAttempts(email);
+            
+            // Manejar "Remember Me"
+            if (rememberMe) {
+                saveRememberMe(email, response.token);
+            } else {
+                clearRememberMe();
+            }
             
             // Redirigir al dashboard
             router.push('/dashboard');
             
         } catch (err) {
             const apiError = err as ApiError;
-            setError(apiError.message || 'Error al iniciar sesión');
+            
+            // Registrar intento fallido
+            const attemptResult = recordFailedAttempt(email);
+            
+            if (attemptResult.isLocked) {
+                setError(`Cuenta bloqueada por ${attemptResult.lockoutTimeRemaining} minutos debido a múltiples intentos fallidos.`);
+            } else {
+                setError(apiError.message || 'Error al iniciar sesión');
+            }
+            
             console.error('Error de login:', apiError);
         } finally {
             setLoading(false);
         }
-
     };
 
     const demoCredentials = [
@@ -49,6 +116,28 @@ export const LoginForm: React.FC = () => {
     const fillDemo = (demoEmail: string, demoPassword: string) => {
         setEmail(demoEmail);
         setPassword(demoPassword);
+    };
+
+    // Validar fortaleza de contraseña
+    const passwordStrength = validatePasswordStrength(password);
+
+    // Obtener información de intentos de login
+    const attemptInfo = getAttemptInfo(email);
+
+    // Manejar cambio de contraseña
+    const handlePasswordChange = (newPassword: string) => {
+        setPassword(newPassword);
+        if (newPassword.length > 0) {
+            setShowPasswordStrength(true);
+        }
+    };
+
+    // Actualizar estado de la cuenta
+    const handleRefreshAccountStatus = () => {
+        setIsCheckingAccount(true);
+        setTimeout(() => {
+            setIsCheckingAccount(false);
+        }, 500);
     };
 
     return (
@@ -74,6 +163,16 @@ export const LoginForm: React.FC = () => {
                     </div>
                 )}
 
+                {/* Advertencia de bloqueo de cuenta */}
+                {email && (
+                    <AccountLockoutWarning
+                        isLocked={attemptInfo.isLocked}
+                        attemptsRemaining={attemptInfo.attemptsRemaining}
+                        lockoutTimeRemaining={attemptInfo.lockoutTimeRemaining}
+                        onRefresh={handleRefreshAccountStatus}
+                    />
+                )}
+
                 {/* Email field */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -88,8 +187,13 @@ export const LoginForm: React.FC = () => {
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
                         placeholder="tu@correo.com"
                         required
-                        disabled={loading}
+                        disabled={loading || isCheckingAccount}
                     />
+                    {isCheckingAccount && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                        </div>
+                    )}
                     </div>
                 </div>
 
@@ -103,21 +207,28 @@ export const LoginForm: React.FC = () => {
                     <input
                         type={showPassword ? 'text' : 'password'}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => handlePasswordChange(e.target.value)}
                         className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
                         placeholder="Tu contraseña"
                         required
-                        disabled={loading}
+                        disabled={loading || isCheckingAccount}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        disabled={loading}
+                        disabled={loading || isCheckingAccount}
                     >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                     </div>
+                    
+                    {/* Indicador de fortaleza de contraseña */}
+                    {showPasswordStrength && password.length > 0 && (
+                        <div className="mt-3">
+                            <PasswordStrengthIndicator strength={passwordStrength} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Remember me */}
@@ -128,14 +239,14 @@ export const LoginForm: React.FC = () => {
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                        disabled={loading}
+                        disabled={loading || isCheckingAccount}
                     />
                     <span className="ml-2 text-sm text-gray-600">Recordarme</span>
                     </label>
                     <button
                     type="button"
                     className="text-sm text-green-600 hover:text-green-500"
-                    disabled={loading}
+                    disabled={loading || isCheckingAccount}
                     >
                     ¿Olvidaste tu contraseña?
                     </button>
@@ -144,7 +255,7 @@ export const LoginForm: React.FC = () => {
                 {/* Submit button */}
                 <button
                     type="submit"
-                    disabled={loading || !email || !password}
+                    disabled={loading || !email || !password || isCheckingAccount || attemptInfo.isLocked}
                     className="w-full bg-green-500 text-white py-3 px-4 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition-colors"
                 >
                     {loading ? (
@@ -152,6 +263,13 @@ export const LoginForm: React.FC = () => {
                         <Loader2 className="w-5 h-5 animate-spin" />
                         <span>Iniciando sesión...</span>
                     </>
+                    ) : isCheckingAccount ? (
+                    <>
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                        <span>Verificando cuenta...</span>
+                    </>
+                    ) : attemptInfo.isLocked ? (
+                    <span>Cuenta Bloqueada</span>
                     ) : (
                     <span>Iniciar Sesión</span>
                     )}
