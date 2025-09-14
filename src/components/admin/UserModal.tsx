@@ -1,8 +1,8 @@
 'use client';
 
 import { useUserStore, type UserProfile } from '@/stores/userStore';
-import { Building, Eye, EyeOff, Mail, Phone, Save, Shield, User, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Building, Eye, EyeOff, Mail, Phone, Save, Shield, User, X, Upload, Camera, Check, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
 
 interface UserModalProps {
   mode: 'create' | 'edit';
@@ -21,6 +21,22 @@ interface FormData {
   password: string;
   confirmPassword: string;
   permissions: string[];
+  avatar?: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  description?: string;
+  manager?: string;
+  userCount: number;
+}
+
+interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  category: 'system' | 'chat' | 'user' | 'report';
 }
 
 interface FormErrors {
@@ -50,6 +66,9 @@ export const UserModal: React.FC<UserModalProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (mode === 'edit' && user) {
@@ -63,25 +82,52 @@ export const UserModal: React.FC<UserModalProps> = ({
         department: user.department || 'Ventas',
         password: '',
         confirmPassword: '',
-        permissions: user.permissions
+        permissions: user.permissions,
+        avatar: user.avatar
       });
+      setAvatarPreview(user.avatar || null);
     }
     clearError();
   }, [mode, user, clearError]);
 
-  const rolePermissions = {
-    admin: ['all'],
-    supervisor: ['manage_agents', 'view_reports', 'assign_chats', 'handle_chats', 'edit_profile'],
-    agent: ['handle_chats', 'edit_profile']
-  };
-
-  const departments = [
-    'Ventas',
-    'Administración',
-    'Soporte',
-    'Marketing',
-    'Recursos Humanos'
+  const departments: Department[] = [
+    { id: '1', name: 'Ventas', description: 'Equipo de ventas y atención al cliente', manager: 'Ana López', userCount: 12 },
+    { id: '2', name: 'Administración', description: 'Gestión administrativa y recursos humanos', manager: 'Admin Usuario', userCount: 3 },
+    { id: '3', name: 'Soporte', description: 'Soporte técnico y atención post-venta', manager: 'Carlos Mendoza', userCount: 8 },
+    { id: '4', name: 'Marketing', description: 'Marketing digital y comunicaciones', manager: 'María García', userCount: 5 },
+    { id: '5', name: 'Recursos Humanos', description: 'Gestión de personal y desarrollo organizacional', manager: 'Luis Rodríguez', userCount: 2 }
   ];
+
+  const availablePermissions: Permission[] = [
+    // System permissions
+    { id: 'system_admin', name: 'Administrador del Sistema', description: 'Acceso completo a todas las funciones', category: 'system' },
+    { id: 'manage_users', name: 'Gestionar Usuarios', description: 'Crear, editar y eliminar usuarios', category: 'system' },
+    { id: 'manage_departments', name: 'Gestionar Departamentos', description: 'Administrar departamentos y asignaciones', category: 'system' },
+    { id: 'system_settings', name: 'Configuración del Sistema', description: 'Modificar configuraciones globales', category: 'system' },
+    
+    // Chat permissions
+    { id: 'handle_chats', name: 'Manejar Conversaciones', description: 'Responder y gestionar chats de clientes', category: 'chat' },
+    { id: 'assign_chats', name: 'Asignar Conversaciones', description: 'Asignar chats a otros agentes', category: 'chat' },
+    { id: 'transfer_chats', name: 'Transferir Conversaciones', description: 'Transferir chats entre agentes/departamentos', category: 'chat' },
+    { id: 'close_chats', name: 'Cerrar Conversaciones', description: 'Finalizar conversaciones con clientes', category: 'chat' },
+    { id: 'view_chat_history', name: 'Ver Historial de Chats', description: 'Acceder al historial completo de conversaciones', category: 'chat' },
+    
+    // User permissions
+    { id: 'edit_profile', name: 'Editar Perfil', description: 'Modificar información personal', category: 'user' },
+    { id: 'change_password', name: 'Cambiar Contraseña', description: 'Actualizar contraseña personal', category: 'user' },
+    { id: 'manage_availability', name: 'Gestionar Disponibilidad', description: 'Cambiar estado de disponibilidad', category: 'user' },
+    
+    // Report permissions
+    { id: 'view_reports', name: 'Ver Reportes', description: 'Acceder a reportes y estadísticas', category: 'report' },
+    { id: 'export_reports', name: 'Exportar Reportes', description: 'Descargar reportes en diferentes formatos', category: 'report' },
+    { id: 'advanced_analytics', name: 'Análisis Avanzado', description: 'Acceder a métricas y análisis detallados', category: 'report' }
+  ];
+
+  const rolePermissions = {
+    admin: ['system_admin'],
+    supervisor: ['manage_users', 'assign_chats', 'transfer_chats', 'close_chats', 'view_chat_history', 'view_reports', 'export_reports', 'handle_chats', 'edit_profile', 'change_password', 'manage_availability'],
+    agent: ['handle_chats', 'edit_profile', 'change_password', 'manage_availability']
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -168,6 +214,66 @@ export const UserModal: React.FC<UserModalProps> = ({
     }));
   };
 
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, avatar: 'Solo se permiten archivos de imagen' }));
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, avatar: 'El archivo debe ser menor a 5MB' }));
+        return;
+      }
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setAvatarPreview(result);
+        setFormData(prev => ({ ...prev, avatar: result }));
+        setErrors(prev => ({ ...prev, avatar: '' }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePermissionToggle = (permissionId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      permissions: prev.permissions.includes(permissionId)
+        ? prev.permissions.filter(p => p !== permissionId)
+        : [...prev.permissions, permissionId]
+    }));
+  };
+
+  const getPermissionsByCategory = (category: string) => {
+    return availablePermissions.filter(p => p.category === category);
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'system': return <Shield className="w-4 h-4" />;
+      case 'chat': return <Mail className="w-4 h-4" />;
+      case 'user': return <User className="w-4 h-4" />;
+      case 'report': return <Building className="w-4 h-4" />;
+      default: return <Shield className="w-4 h-4" />;
+    }
+  };
+
+  const getCategoryName = (category: string) => {
+    switch (category) {
+      case 'system': return 'Sistema';
+      case 'chat': return 'Conversaciones';
+      case 'user': return 'Usuario';
+      case 'report': return 'Reportes';
+      default: return category;
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -209,6 +315,61 @@ export const UserModal: React.FC<UserModalProps> = ({
           {/* Personal Information */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Información Personal</h3>
+            
+            {/* Avatar Upload */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Foto de Perfil
+              </label>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  {avatarPreview || (user && user.avatar) ? (
+                    <img
+                      src={avatarPreview || user?.avatar}
+                      alt="Avatar preview"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium text-lg">
+                        {formData.firstName.charAt(0)}{formData.lastName.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                </div>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Subir Foto</span>
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    JPG, PNG o GIF. Máximo 5MB.
+                  </p>
+                  {errors.avatar && (
+                    <p className="text-red-500 text-xs mt-1">{errors.avatar}</p>
+                  )}
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -345,9 +506,19 @@ export const UserModal: React.FC<UserModalProps> = ({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500"
                 >
                   {departments.map(dept => (
-                    <option key={dept} value={dept}>{dept}</option>
+                    <option key={dept.id} value={dept.name}>{dept.name}</option>
                   ))}
                 </select>
+                {formData.department && (
+                  <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                    {departments.find(d => d.name === formData.department)?.description}
+                    <br />
+                    <span className="font-medium">
+                      Manager: {departments.find(d => d.name === formData.department)?.manager} • 
+                      {departments.find(d => d.name === formData.department)?.userCount} usuarios
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -418,24 +589,105 @@ export const UserModal: React.FC<UserModalProps> = ({
             </div>
           )}
 
-          {/* Permissions Preview */}
+          {/* Permissions Management */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Permisos</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Gestión de Permisos</h3>
+              <button
+                type="button"
+                onClick={() => setShowPermissions(!showPermissions)}
+                className="text-sm text-green-600 hover:text-green-800 font-medium"
+              >
+                {showPermissions ? 'Ocultar detalles' : 'Personalizar permisos'}
+              </button>
+            </div>
+
+            {/* Role-based permissions summary */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
               <p className="text-sm text-gray-600 mb-2">
-                Permisos asignados al rol <strong>{formData.role}</strong>:
+                Permisos base del rol <strong>{formData.role}</strong>:
               </p>
               <div className="flex flex-wrap gap-2">
-                {rolePermissions[formData.role].map(permission => (
-                  <span
-                    key={permission}
-                    className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
-                  >
-                    {permission}
-                  </span>
-                ))}
+                {rolePermissions[formData.role].map(permissionId => {
+                  const permission = availablePermissions.find(p => p.id === permissionId);
+                  return permission ? (
+                    <span
+                      key={permissionId}
+                      className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full flex items-center space-x-1"
+                    >
+                      {getCategoryIcon(permission.category)}
+                      <span>{permission.name}</span>
+                    </span>
+                  ) : null;
+                })}
               </div>
             </div>
+
+            {/* Detailed permissions */}
+            {showPermissions && (
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertCircle className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Personalización de Permisos</span>
+                  </div>
+                  <p className="text-xs text-blue-700">
+                    Puedes personalizar los permisos específicos para este usuario. Los cambios sobrescribirán los permisos base del rol.
+                  </p>
+                </div>
+
+                {['system', 'chat', 'user', 'report'].map(category => (
+                  <div key={category} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                      {getCategoryIcon(category)}
+                      <span>{getCategoryName(category)}</span>
+                    </h4>
+                    <div className="space-y-2">
+                      {getPermissionsByCategory(category).map(permission => (
+                        <label key={permission.id} className="flex items-start space-x-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.permissions.includes(permission.id)}
+                            onChange={() => handlePermissionToggle(permission.id)}
+                            className="mt-1 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium text-gray-900">{permission.name}</span>
+                              {formData.permissions.includes(permission.id) && (
+                                <Check className="w-4 h-4 text-green-600" />
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">{permission.description}</p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Permission Summary */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-medium text-green-900 mb-2">Resumen de Permisos Activos</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {formData.permissions.map(permissionId => {
+                      const permission = availablePermissions.find(p => p.id === permissionId);
+                      return permission ? (
+                        <span
+                          key={permissionId}
+                          className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                        >
+                          {permission.name}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                  <p className="text-xs text-green-700 mt-2">
+                    Total: {formData.permissions.length} permisos activos
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

@@ -19,11 +19,17 @@ import React, { useState } from 'react';
 interface UserTableProps {
   isLoading: boolean;
   onEditUser: (user: UserProfile) => void;
+  selectedUsers?: string[];
+  onSelectUser?: (userId: string, selected: boolean) => void;
+  onSelectAll?: () => void;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
   isLoading,
-  onEditUser
+  onEditUser,
+  selectedUsers = [],
+  onSelectUser,
+  onSelectAll
 }) => {
   const {
     getFilteredUsers,
@@ -113,6 +119,16 @@ export const UserTable: React.FC<UserTableProps> = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              {onSelectUser && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length === users.length && users.length > 0}
+                    onChange={onSelectAll}
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                </th>
+              )}
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Usuario
               </th>
@@ -139,6 +155,18 @@ export const UserTable: React.FC<UserTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
+                {/* Checkbox */}
+                {onSelectUser && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.includes(user.id)}
+                      onChange={(e) => onSelectUser(user.id, e.target.checked)}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                  </td>
+                )}
+                
                 {/* Usuario */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">

@@ -22,6 +22,13 @@ export interface UserProfile {
     avgResponseTime: number;
     satisfaction: number;
   };
+  activityMetrics?: {
+    loginCount: number;
+    totalChatTime: number;
+    availability: number;
+    lastActivity: string;
+    currentStatus: 'online' | 'offline' | 'away' | 'busy';
+  };
 }
 
 interface UserState {
@@ -45,6 +52,8 @@ interface UserState {
   updateUser: (id: string, updates: Partial<UserProfile>) => Promise<boolean>;
   deleteUser: (id: string) => Promise<boolean>;
   toggleUserStatus: (id: string) => Promise<boolean>;
+  bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => Promise<boolean>;
+  bulkDeleteUsers: (userIds: string[]) => Promise<boolean>;
   setSelectedUser: (user: UserProfile | null) => void;
   setFilters: (filters: Partial<UserState['filters']>) => void;
   clearError: () => void;
@@ -58,6 +67,8 @@ interface UserState {
     inactive: number;
     byRole: Record<string, number>;
   };
+  updateUserActivity: (userId: string, activity: Partial<UserProfile['activityMetrics']>) => void;
+  getUserActivityMetrics: (userId: string) => UserProfile['activityMetrics'] | undefined;
 }
 
 // Datos iniciales de usuarios
@@ -80,6 +91,13 @@ const initialUsers: UserProfile[] = [
       activeChats: 0,
       avgResponseTime: 0,
       satisfaction: 0
+    },
+    activityMetrics: {
+      loginCount: 0,
+      totalChatTime: 0,
+      availability: 100,
+      lastActivity: '2024-08-24 14:30',
+      currentStatus: 'offline'
     }
   },
   {
@@ -100,6 +118,13 @@ const initialUsers: UserProfile[] = [
       activeChats: 12,
       avgResponseTime: 2.3,
       satisfaction: 4.7
+    },
+    activityMetrics: {
+      loginCount: 28,
+      totalChatTime: 420,
+      availability: 95,
+      lastActivity: '2024-08-24 13:45',
+      currentStatus: 'online'
     }
   },
   {
@@ -120,6 +145,13 @@ const initialUsers: UserProfile[] = [
       activeChats: 8,
       avgResponseTime: 3.1,
       satisfaction: 4.5
+    },
+    activityMetrics: {
+      loginCount: 22,
+      totalChatTime: 380,
+      availability: 88,
+      lastActivity: '2024-08-24 15:20',
+      currentStatus: 'online'
     }
   },
   {
@@ -140,6 +172,13 @@ const initialUsers: UserProfile[] = [
       activeChats: 6,
       avgResponseTime: 2.8,
       satisfaction: 4.6
+    },
+    activityMetrics: {
+      loginCount: 25,
+      totalChatTime: 340,
+      availability: 92,
+      lastActivity: '2024-08-24 12:10',
+      currentStatus: 'away'
     }
   },
   {
@@ -160,6 +199,13 @@ const initialUsers: UserProfile[] = [
       activeChats: 0,
       avgResponseTime: 4.2,
       satisfaction: 4.1
+    },
+    activityMetrics: {
+      loginCount: 15,
+      totalChatTime: 280,
+      availability: 65,
+      lastActivity: '2024-08-20 16:45',
+      currentStatus: 'offline'
     }
   }
 ];
@@ -292,6 +338,57 @@ export const useUserStore = create<UserState>((set, get) => ({
     return get().updateUser(id, { status: newStatus });
   },
 
+  // Bulk update users
+  bulkUpdateUsers: async (userIds: string[], updates: Partial<UserProfile>) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      set(state => ({
+        users: state.users.map(user => 
+          userIds.includes(user.id) 
+            ? { 
+                ...user, 
+                ...updates,
+                name: updates.firstName && updates.lastName 
+                  ? `${updates.firstName} ${updates.lastName}` 
+                  : user.name 
+              } 
+            : user
+        ),
+        isLoading: false
+      }));
+
+      return true;
+    } catch (error) {
+      set({ error: 'Error al actualizar usuarios', isLoading: false });
+      return false;
+    }
+  },
+
+  // Bulk delete users
+  bulkDeleteUsers: async (userIds: string[]) => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      set(state => ({
+        users: state.users.filter(user => !userIds.includes(user.id)),
+        selectedUser: userIds.includes(state.selectedUser?.id || '') ? null : state.selectedUser,
+        isLoading: false
+      }));
+
+      return true;
+    } catch (error) {
+      set({ error: 'Error al eliminar usuarios', isLoading: false });
+      return false;
+    }
+  },
+
   // Set selected user
   setSelectedUser: (user) => set({ selectedUser: user }),
 
@@ -338,5 +435,28 @@ export const useUserStore = create<UserState>((set, get) => ({
     }, {} as Record<string, number>);
 
     return { total, active, inactive, byRole };
+  },
+
+  // Update user activity metrics
+  updateUserActivity: (userId, activity) => {
+    set(state => ({
+      users: state.users.map(user => 
+        user.id === userId 
+          ? { 
+              ...user, 
+              activityMetrics: { 
+                ...user.activityMetrics, 
+                ...activity 
+              } as UserProfile['activityMetrics']
+            } 
+          : user
+      )
+    }));
+  },
+
+  // Get user activity metrics
+  getUserActivityMetrics: (userId) => {
+    const user = get().users.find(u => u.id === userId);
+    return user?.activityMetrics;
   }
 }));

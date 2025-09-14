@@ -2,15 +2,25 @@
 
 import { useUserStore, type UserProfile } from '@/stores/userStore';
 import {
-    Download,
-    Filter,
-    Plus,
-    Search
+  Download,
+  Filter,
+  Plus,
+  Search,
+  Users,
+  UserCheck,
+  UserX,
+  Trash2,
+  Activity,
+  Clock,
+  CheckSquare,
+  Square,
+  X
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { UserModal } from './UserModal';
 import { UserStats } from './UserStats';
 import { UserTable } from './UserTable';
+import { UserActivityDashboard } from './UserActivityDashboard';
 
 export const UserManagement: React.FC = () => {
   const {
@@ -21,13 +31,22 @@ export const UserManagement: React.FC = () => {
     fetchUsers,
     setFilters,
     clearError,
-    getUserStats
+    getUserStats,
+    getFilteredUsers,
+    bulkUpdateUsers,
+    bulkDeleteUsers,
+    toggleUserStatus
   } = useUserStore();
 
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showActivityPanel, setShowActivityPanel] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [showActivityDashboard, setShowActivityDashboard] = useState(false);
 
 
   const stats = getUserStats();
@@ -60,14 +79,17 @@ export const UserManagement: React.FC = () => {
   const handleExportUsers = () => {
     // Simular descarga de CSV
     const csvContent = [
-      ['Nombre', 'Email', 'Rol', 'Estado', 'Departamento', 'Fecha de Ingreso'].join(','),
+      ['Nombre', 'Email', 'Rol', 'Estado', 'Departamento', 'Fecha de Ingreso', 'Último Acceso', 'Chats Totales', 'Chats Activos'].join(','),
       ...users.map(user => [
         user.name,
         user.email,
         user.role,
         user.status,
         user.department || '',
-        user.hireDate
+        user.hireDate,
+        user.lastLogin || 'Nunca',
+        user.stats.totalChats,
+        user.stats.activeChats
       ].join(','))
     ].join('\n');
 
@@ -78,6 +100,64 @@ export const UserManagement: React.FC = () => {
     a.download = 'usuarios.csv';
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleSelectUser = (userId: string, selected: boolean) => {
+    if (selected) {
+      setSelectedUsers(prev => [...prev, userId]);
+    } else {
+      setSelectedUsers(prev => prev.filter(id => id !== userId));
+    }
+  };
+
+  const handleSelectAll = () => {
+    const filteredUsers = getFilteredUsers();
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map(user => user.id));
+    }
+  };
+
+  const handleBulkStatusChange = async (status: 'active' | 'inactive') => {
+    setBulkActionLoading(true);
+    try {
+      await bulkUpdateUsers(selectedUsers, { status });
+      setSelectedUsers([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      console.error('Error updating users:', error);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (window.confirm(`¿Estás seguro de eliminar ${selectedUsers.length} usuarios? Esta acción no se puede deshacer.`)) {
+      setBulkActionLoading(true);
+      try {
+        await bulkDeleteUsers(selectedUsers);
+        setSelectedUsers([]);
+        setShowBulkActions(false);
+      } catch (error) {
+        console.error('Error deleting users:', error);
+      } finally {
+        setBulkActionLoading(false);
+      }
+    }
+  };
+
+  const handleBulkDepartmentChange = async (department: string) => {
+    setBulkActionLoading(true);
+    try {
+      await bulkUpdateUsers(selectedUsers, { department });
+      setSelectedUsers([]);
+      setShowBulkActions(false);
+    } catch (error) {
+      console.error('Error updating departments:', error);
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
   return (
@@ -91,8 +171,30 @@ export const UserManagement: React.FC = () => {
               Administra vendedores, supervisores y configuraciones de acceso
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowActivityPanel(!showActivityPanel)}
+              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${showActivityPanel
+                ? 'bg-blue-50 border-blue-300 text-blue-700'
+                : 'border-gray-300 hover:bg-gray-50'
+                }`}
+            >
+              <Activity className="w-4 h-4" />
+              <span>Actividad</span>
+            </button>
+
+            <button
+              onClick={() => setShowActivityDashboard(!showActivityDashboard)}
+              className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${showActivityDashboard
+                ? 'bg-purple-50 border-purple-300 text-purple-700'
+                : 'border-gray-300 hover:bg-gray-50'
+                }`}
+            >
+              <Clock className="w-4 h-4" />
+              <span>Dashboard</span>
+            </button>
+
             <button
               onClick={handleExportUsers}
               className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -100,7 +202,7 @@ export const UserManagement: React.FC = () => {
               <Download className="w-4 h-4" />
               <span>Exportar</span>
             </button>
-            
+
             <button
               onClick={handleCreateUser}
               className="flex items-center space-x-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
@@ -150,11 +252,10 @@ export const UserManagement: React.FC = () => {
           {/* Filters Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${
-              showFilters
-                ? 'bg-green-50 border-green-300 text-green-700'
-                : 'border-gray-300 hover:bg-gray-50'
-            }`}
+            className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-colors ${showFilters
+              ? 'bg-green-50 border-green-300 text-green-700'
+              : 'border-gray-300 hover:bg-gray-50'
+              }`}
           >
             <Filter className="w-4 h-4" />
             <span>Filtros</span>
@@ -216,11 +317,172 @@ export const UserManagement: React.FC = () => {
         )}
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedUsers.length > 0 && (
+        <div className="bg-blue-50 border-b border-blue-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-blue-900">
+                {selectedUsers.length} usuario{selectedUsers.length !== 1 ? 's' : ''} seleccionado{selectedUsers.length !== 1 ? 's' : ''}
+              </span>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handleBulkStatusChange('active')}
+                  disabled={bulkActionLoading}
+                  className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Activar</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkStatusChange('inactive')}
+                  disabled={bulkActionLoading}
+                  className="flex items-center space-x-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors disabled:opacity-50"
+                >
+                  <UserX className="w-4 h-4" />
+                  <span>Desactivar</span>
+                </button>
+
+                <select
+                  onChange={(e) => e.target.value && handleBulkDepartmentChange(e.target.value)}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                  defaultValue=""
+                >
+                  <option value="">Cambiar Departamento</option>
+                  <option value="Ventas">Ventas</option>
+                  <option value="Administración">Administración</option>
+                  <option value="Soporte">Soporte</option>
+                  <option value="Marketing">Marketing</option>
+                </select>
+
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkActionLoading}
+                  className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedUsers([])}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Cancelar selección
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Activity Panel */}
+      {showActivityPanel && (
+        <div className="bg-white border-b border-gray-200 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Activity */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-blue-500" />
+                Actividad Reciente
+              </h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {users.slice(0, 5).map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white font-medium text-xs">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {user.lastLogin ? `Último acceso: ${user.lastLogin}` : 'Sin accesos recientes'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">{user.stats.activeChats} chats</p>
+                      <p className="text-xs text-gray-500">activos</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Performance Metrics */}
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                <Activity className="w-5 h-5 mr-2 text-green-500" />
+                Métricas de Rendimiento
+              </h3>
+              <div className="space-y-4">
+                {/* Top Performers */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Mejores Agentes (por satisfacción)</h4>
+                  <div className="space-y-2">
+                    {users
+                      .filter(user => user.role === 'agent' && user.stats.satisfaction > 0)
+                      .sort((a, b) => b.stats.satisfaction - a.stats.satisfaction)
+                      .slice(0, 3)
+                      .map((user, index) => (
+                        <div key={user.id} className="flex items-center justify-between p-2 bg-green-50 rounded">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-green-700">#{index + 1}</span>
+                            <span className="text-sm text-gray-900">{user.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-green-700">
+                              ★ {user.stats.satisfaction.toFixed(1)}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              ({user.stats.totalChats} chats)
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Response Time Leaders */}
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Mejor Tiempo de Respuesta</h4>
+                  <div className="space-y-2">
+                    {users
+                      .filter(user => user.role === 'agent' && user.stats.avgResponseTime > 0)
+                      .sort((a, b) => a.stats.avgResponseTime - b.stats.avgResponseTime)
+                      .slice(0, 3)
+                      .map((user, index) => (
+                        <div key={user.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-blue-700">#{index + 1}</span>
+                            <span className="text-sm text-gray-900">{user.name}</span>
+                          </div>
+                          <span className="text-sm font-medium text-blue-700">
+                            {user.stats.avgResponseTime.toFixed(1)}min
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Users Table */}
       <div className="flex-1 overflow-hidden">
         <UserTable
           isLoading={isLoading}
           onEditUser={handleEditUser}
+          selectedUsers={selectedUsers}
+          onSelectUser={handleSelectUser}
+          onSelectAll={handleSelectAll}
         />
       </div>
 
@@ -231,6 +493,26 @@ export const UserManagement: React.FC = () => {
           user={selectedUser}
           onClose={handleCloseModal}
         />
+      )}
+
+      {/* Activity Dashboard Modal */}
+      {showActivityDashboard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-7xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Dashboard de Actividad</h2>
+              <button
+                onClick={() => setShowActivityDashboard(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="h-[calc(90vh-80px)] overflow-y-auto">
+              <UserActivityDashboard />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
