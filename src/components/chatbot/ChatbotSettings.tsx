@@ -26,7 +26,7 @@ export const ChatbotSettings: React.FC<ChatbotSettingsProps> = ({
     setHasChanges(hasSettingsChanges || hasFallbackChanges || hasTransferChanges);
   }, [settings, fallbackMessage, transferToDepartment, config]);
 
-  const handleSettingChange = (key: keyof ChatbotSettingsType, value: string | number | boolean) => {
+  const handleSettingChange = (key: keyof ChatbotSettingsType, value: string | number | boolean | string[]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
@@ -38,7 +38,7 @@ export const ChatbotSettings: React.FC<ChatbotSettingsProps> = ({
   const handleSave = async () => {
     try {
       setSaving(true);
-      await onUpdate({ 
+      onUpdate({ 
         settings,
         fallbackMessage,
         transferToDepartment: transferToDepartment || undefined
