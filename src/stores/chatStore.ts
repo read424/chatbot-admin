@@ -15,17 +15,17 @@ interface ChatState {
   setFilters: (filters: Partial<ChatFilters>) => void;
   
   // Chat operations
-  updateChat: (chatId: number, updates: Partial<Chat>) => void;
-  markAsRead: (chatId: number) => void;
-  assignSalesperson: (chatId: number, salesperson: string) => void;
+  updateChat: (chatId: string, updates: Partial<Chat>) => void;
+  markAsRead: (chatId: string) => void;
+  assignSalesperson: (chatId: string, salesperson: string) => void;
   
   // Message operations
-  addMessage: (chatId: number, message: Omit<Message, 'id'>) => void;
-  updateMessageStatus: (chatId: number, messageId: number, status: Message['status']) => void;
+  addMessage: (chatId: string, message: Omit<Message, 'id'>) => void;
+  updateMessageStatus: (chatId: string, messageId: string, status: boolean) => void;
   
   // Utility functions
   getFilteredChats: () => Chat[];
-  getChatMessages: (chatId: number) => Message[];
+  getChatMessages: (chatId: string) => Message[];
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -75,7 +75,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   // Message operations
   addMessage: (chatId, messageData) => set(state => {
     const newMessage: Message = {
-      id: Date.now(),
+      id: Date.now().toString(),
       ...messageData
     };
 
@@ -84,8 +84,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return {
           ...chat,
           messages: [...chat.messages, newMessage],
-          lastMessage: newMessage.text,
-          timestamp: newMessage.timestamp
+          lastMessage: newMessage.content,
+          timestamp: newMessage.createdAt
         };
       }
       return chat;
@@ -95,8 +95,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ? {
           ...state.selectedChat,
           messages: [...state.selectedChat.messages, newMessage],
-          lastMessage: newMessage.text,
-          timestamp: newMessage.timestamp
+          lastMessage: newMessage.content,
+          timestamp: newMessage.createdAt
         }
       : state.selectedChat;
 
@@ -112,7 +112,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return {
           ...chat,
           messages: chat.messages.map(msg => 
-            msg.id === messageId ? { ...msg, status } : msg
+            msg.id === messageId ? { ...msg, isRead: status } : msg
           )
         };
       }
@@ -123,7 +123,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ? {
           ...state.selectedChat,
           messages: state.selectedChat.messages.map(msg => 
-            msg.id === messageId ? { ...msg, status } : msg
+            msg.id === messageId ? { ...msg, isRead: status } : msg
           )
         }
       : state.selectedChat;

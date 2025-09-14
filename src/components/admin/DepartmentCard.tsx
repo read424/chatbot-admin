@@ -2,16 +2,16 @@
 
 import { useDepartmentStore, type Department } from '@/stores/departmentStore';
 import {
-    Clock,
-    Edit,
-    Eye,
-    MessageSquare,
-    MoreVertical,
-    Power,
-    Settings,
-    Trash2,
-    Users,
-    X
+  Clock,
+  Edit,
+  Eye,
+  MessageSquare,
+  MoreVertical,
+  Power,
+  Settings,
+  Trash2,
+  Users,
+  X
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -24,11 +24,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
   department,
   onEdit
 }) => {
-  const { 
-    toggleDepartmentStatus, 
+  const {
+    toggleDepartmentStatus,
     deleteDepartment,
-    previewMessage,
-    availableVariables 
+    previewMessage
   } = useDepartmentStore();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -61,15 +60,14 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 
   return (
     <>
-      <div className={`bg-white rounded-xl shadow-sm border-2 transition-all hover:shadow-md ${
-        isActive ? 'border-gray-200' : 'border-gray-300 opacity-75'
-      }`}>
+      <div className={`bg-white rounded-xl shadow-sm border-2 transition-all hover:shadow-md ${isActive ? 'border-gray-200' : 'border-gray-300 opacity-75'
+        }`}>
         {/* Header with color indicator */}
-        <div 
+        <div
           className="h-2 rounded-t-xl"
           style={{ backgroundColor: department.color }}
         ></div>
-        
+
         <div className="p-6">
           {/* Department info */}
           <div className="flex items-start justify-between mb-4">
@@ -78,7 +76,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 <h3 className="text-lg font-semibold text-gray-900">
                   {department.name}
                 </h3>
-                <div 
+                <div
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: department.color }}
                 ></div>
@@ -87,7 +85,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 {department.description}
               </p>
             </div>
-            
+
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
@@ -98,8 +96,8 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 
               {showMenu && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-10" 
+                  <div
+                    className="fixed inset-0 z-10"
                     onClick={() => setShowMenu(false)}
                   />
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
@@ -114,7 +112,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                         <Eye className="w-4 h-4" />
                         <span>Vista Previa</span>
                       </button>
-                      
+
                       <button
                         onClick={() => {
                           onEdit(department);
@@ -135,7 +133,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                       </button>
 
                       <hr className="my-1" />
-                      
+
                       <button
                         onClick={() => {
                           setShowDeleteConfirm(true);
@@ -155,14 +153,12 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
 
           {/* Status badge */}
           <div className="mb-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              isActive 
-                ? 'bg-green-100 text-green-800'
-                : 'bg-gray-100 text-gray-600'
-            }`}>
-              <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                isActive ? 'bg-green-500' : 'bg-gray-400'
-              }`}></div>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isActive
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-600'
+              }`}>
+              <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isActive ? 'bg-green-500' : 'bg-gray-400'
+                }`}></div>
               {isActive ? 'Activo' : 'Inactivo'}
             </span>
           </div>
@@ -176,7 +172,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               <div className="text-lg font-semibold text-gray-900">{department.stats.totalUsers}</div>
               <div className="text-xs text-gray-500">Usuarios</div>
             </div>
-            
+
             <div className="text-center">
               <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-lg mb-2 mx-auto">
                 <MessageSquare className="w-5 h-5 text-green-600" />
@@ -184,7 +180,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               <div className="text-lg font-semibold text-gray-900">{department.stats.activeChats}</div>
               <div className="text-xs text-gray-500">Chats</div>
             </div>
-            
+
             <div className="text-center">
               <div className="flex items-center justify-center w-10 h-10 bg-orange-100 rounded-lg mb-2 mx-auto">
                 <Clock className="w-5 h-5 text-orange-600" />
@@ -209,7 +205,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               <Eye className="w-4 h-4" />
               <span>Vista Previa</span>
             </button>
-            
+
             <button
               onClick={() => onEdit(department)}
               className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
@@ -243,7 +239,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
             <div className="p-6">
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex items-center space-x-2 mb-3">
-                  <div 
+                  <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
                     style={{ backgroundColor: department.color }}
                   >
@@ -251,7 +247,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                   </div>
                   <span className="font-medium text-gray-900">{department.name}</span>
                 </div>
-                
+
                 <div className="bg-white rounded-lg p-3 shadow-sm">
                   <div className="text-sm text-gray-900 whitespace-pre-wrap">
                     {previewWelcomeMessage}
@@ -265,7 +261,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                   <p className="text-sm font-medium text-gray-700 mb-3">Opciones disponibles:</p>
                   <div className="space-y-2">
                     {department.options.filter(opt => opt.isActive).map((option, index) => (
-                      <div 
+                      <div
                         key={option.id}
                         className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg"
                       >
@@ -298,7 +294,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 </p>
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}

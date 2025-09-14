@@ -3,7 +3,7 @@
 import type { User } from '@/lib/api/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export const useAuth = () => {
   const {
@@ -16,11 +16,15 @@ export const useAuth = () => {
     clearError,
     setUser
   } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
 
   const router = useRouter();
 
+
   // Verificar persistencia al cargar (solo en el cliente)
   useEffect(() => {
+    setMounted(true);
+
     const checkAuth = () => {
       // Verificar que estamos en el cliente
       if (typeof window === 'undefined') return;
@@ -96,6 +100,7 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     error,
+    mounted,
 
     // Actions
     login: handleLogin,
@@ -103,7 +108,7 @@ export const useAuth = () => {
     clearError,
 
     // Utilities
-    hasPermission,
+    hasPermission: mounted ? hasPermission : () => false,
     requireAuth,
     
     // User info

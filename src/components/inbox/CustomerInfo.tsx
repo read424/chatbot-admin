@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 
 interface CustomerInfoProps {
   chat: Chat | null;
-  onAssignSalesperson: (chatId: number, salesperson: string) => void;
+  onAssignSalesperson: (chatId: string, salesperson: string) => void;
 }
 
 export const CustomerInfo: React.FC<CustomerInfoProps> = ({

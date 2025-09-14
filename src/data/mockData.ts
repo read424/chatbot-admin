@@ -2,7 +2,7 @@ import { Chat } from "@/types/chat";
 
 export const initialChats: Chat[] = [
   {
-    id: 1,
+    id: "1",
     name: "María García",
     firstName: "María",
     lastName: "García",
@@ -16,30 +16,57 @@ export const initialChats: Chat[] = [
     status: "online",
     messages: [
       { 
-        id: 1, 
-        text: "Hola, buenos días", 
-        sender: "client", 
-        timestamp: "14:25", 
-        status: "read" 
+        id: "1", 
+        content: "Hola, buenos días", 
+        senderId: "client", 
+        receiverId: "agent",
+        senderType: "contact",
+        conversationId: "1",
+        timestamp: "14:25",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T14:25:00Z",
+        updatedAt: "2023-01-01T14:25:00Z",
+        isRead: true 
       },
       { 
-        id: 2, 
-        text: "Hola María, ¿en qué puedo ayudarte?", 
-        sender: "agent", 
-        timestamp: "14:26", 
-        status: "read" 
+        id: "2", 
+        content: "Hola María, ¿en qué puedo ayudarte?", 
+        senderId: "agent", 
+        receiverId: "client",
+        senderType: "agent",
+        conversationId: "1",
+        timestamp: "14:26",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T14:26:00Z",
+        updatedAt: "2023-01-01T14:26:00Z",
+        isRead: true 
       },
       { 
-        id: 3, 
-        text: "Necesito información sobre sus productos", 
-        sender: "client", 
-        timestamp: "14:30", 
-        status: "delivered" 
+        id: "3", 
+        content: "Necesito información sobre sus productos", 
+        senderId: "client", 
+        receiverId: "agent",
+        senderType: "contact",
+        conversationId: "1",
+        timestamp: "14:30",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T14:30:00Z",
+        updatedAt: "2023-01-01T14:30:00Z",
+        isRead: false 
       }
     ]
   },
   {
-    id: 2,
+    id: "2",
     name: "Carlos Rodríguez",
     firstName: "Carlos",
     lastName: "Rodríguez",
@@ -53,30 +80,57 @@ export const initialChats: Chat[] = [
     status: "offline",
     messages: [
       { 
-        id: 1, 
-        text: "¿Tienen delivery?", 
-        sender: "client", 
-        timestamp: "13:40", 
-        status: "read" 
+        id: "4", 
+        content: "¿Tienen delivery?", 
+        senderId: "client", 
+        receiverId: "agent",
+        senderType: "contact",
+        conversationId: "2",
+        timestamp: "13:40",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T13:40:00Z",
+        updatedAt: "2023-01-01T13:40:00Z",
+        isRead: true 
       },
       { 
-        id: 2, 
-        text: "Sí, hacemos delivery en toda Lima", 
-        sender: "agent", 
-        timestamp: "13:42", 
-        status: "read" 
+        id: "5", 
+        content: "Sí, hacemos delivery en toda Lima", 
+        senderId: "agent", 
+        receiverId: "client",
+        senderType: "agent",
+        conversationId: "2",
+        timestamp: "13:42",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T13:42:00Z",
+        updatedAt: "2023-01-01T13:42:00Z",
+        isRead: true 
       },
       { 
-        id: 3, 
-        text: "Perfecto, muchas gracias por la información", 
-        sender: "client", 
-        timestamp: "13:45", 
-        status: "read" 
+        id: "6", 
+        content: "Perfecto, muchas gracias por la información", 
+        senderId: "client", 
+        receiverId: "agent",
+        senderType: "contact",
+        conversationId: "2",
+        timestamp: "13:45",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T13:45:00Z",
+        updatedAt: "2023-01-01T13:45:00Z",
+        isRead: true 
       }
     ]
   },
   {
-    id: 3,
+    id: "3",
     name: "Ana Martínez",
     firstName: "Ana",
     lastName: "Martínez",
@@ -90,11 +144,20 @@ export const initialChats: Chat[] = [
     status: "online",
     messages: [
       { 
-        id: 1, 
-        text: "¿A qué hora abren mañana?", 
-        sender: "client", 
-        timestamp: "12:15", 
-        status: "delivered" 
+        id: "7", 
+        content: "¿A qué hora abren mañana?", 
+        senderId: "client", 
+        receiverId: "agent",
+        senderType: "contact",
+        conversationId: "3",
+        timestamp: "12:15",
+        type: "text",
+        channel: "whatsapp",
+        status: "delivered",
+        isEdited: false,
+        createdAt: "2023-01-01T12:15:00Z",
+        updatedAt: "2023-01-01T12:15:00Z",
+        isRead: false 
       }
     ]
   }

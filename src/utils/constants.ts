@@ -51,12 +51,23 @@ export const MESSAGE_STATUS = {
   } as const;
   
   // API endpoints (for future backend integration)
-  export const API_ENDPOINTS = {
-    CHATS: '/api/chats',
-    MESSAGES: '/api/messages',
-    USERS: '/api/users',
-    CLIENTS: '/api/clients'
-  } as const;
+export const API_ENDPOINTS = {
+  CHATS: '/api/chats',
+  MESSAGES: '/api/messages',
+  USERS: '/api/users',
+  CLIENTS: '/api/clients',
+  WHATSAPP_CONNECTION: '/api/whatsapp/new-connection',
+  WHATSAPP_STATUS: '/api/whatsapp/connection-status',
+} as const;
+
+// WhatsApp Connection Events
+export const WHATSAPP_EVENTS = {
+  QR_CODE: 'qrCode',
+  WHATSAPP_READY: 'whatsappReady',
+  WHATSAPP_DISCONNECTED: 'whatsappDisconnected',
+  LOADING_SCREEN: 'loadingScreen',
+  AUTHENTICATED: 'authenticated'
+} as const;
   
   // Local storage keys
   export const STORAGE_KEYS = {

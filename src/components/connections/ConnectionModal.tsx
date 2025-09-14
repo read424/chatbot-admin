@@ -1,5 +1,7 @@
 'use client';
 
+import { connectionsService } from '@/lib/api/services/connections';
+import { CreateConnectionRequest } from '@/types/connections';
 import { Clock, X } from 'lucide-react';
 import { useState } from 'react';
 import { RichTextEditor } from './RichTextEditor';
@@ -17,7 +19,7 @@ const connectionTypeLabels = {
   'facebook': 'Facebook',
   'instagram': 'Instagram',
   'chat': 'Chat Web',
-  'whatsapp_business': 'WhatsApp Business API',
+  'whatsapp_api': 'WhatsApp Business API',
   'telegram': 'Telegram'
 };
 
@@ -41,7 +43,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
   isOpen,
   onClose,
   connectionType,
-  editingConnection, 
+  editingConnection,
   onSave
 }) => {
   const [formData, setFormData] = useState({
@@ -51,18 +53,50 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
     department: editingConnection?.department || '',
     botResetMinutes: 30
   });
-  
+
   const [showVariables, setShowVariables] = useState(false);
   const [activeEditor, setActiveEditor] = useState<'greeting' | 'farewell' | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...formData,
-      type: connectionType
-    });
+
+    try {
+      const connectionData: CreateConnectionRequest = {
+        providerType: connectionType as 'whatsapp' | 'facebook' | 'instagram' | 'telegram' | 'whatsapp_api' | 'chatweb',
+        name: formData.name,
+        greetingMessage: formData.greetingMessage,
+        farewellMessage: formData.farewellMessage,
+        department: formData.department,
+        botResetMinutes: formData.botResetMinutes,
+        config: {
+          credentials: {},
+          settings: {
+            maxRetries: 3,
+            retryDelay: 1000,
+            timeout: 30000,
+            features: {
+              supportsFiles: true,
+              supportsImages: true,
+              supportsAudio: true,
+              supportsVideo: true,
+              supportsLocation: true,
+              supportsTemplates: true,
+              supportsReadReceipts: true,
+              supportsTypingIndicators: true
+            }
+          },
+          botResetMinutes: formData.botResetMinutes,
+          chatbotEnabled: false
+        }
+      };
+
+      const response = await connectionsService.createConnection(connectionData);
+      onSave(response);
+    } catch (error) {
+      console.error('Error al crear conexión:', error);
+    }
   };
 
   const insertVariable = (variable: string) => {
@@ -72,12 +106,12 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
       const end = textarea.selectionEnd;
       const text = formData[`${activeEditor}Message` as keyof typeof formData] as string;
       const newText = text.slice(0, start) + variable + text.slice(end);
-      
+
       setFormData(prev => ({
         ...prev,
         [`${activeEditor}Message`]: newText
       }));
-      
+
       setTimeout(() => {
         textarea.focus();
         textarea.setSelectionRange(start + variable.length, start + variable.length);
@@ -132,7 +166,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
             >
               <option value="">Seleccionar departamento</option>
               {mockDepartments.map(dept => (
-                <option key={dept.id} value={dept.name}>{dept.name}</option>
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
               ))}
             </select>
           </div>

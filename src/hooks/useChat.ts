@@ -28,14 +28,23 @@ export const useChat = () => {
     if (!selectedChat) return;
 
     const newMessage: Message = {
-      id: Date.now(),
-      text: messageText,
-      sender: 'agent',
+      id: Date.now().toString(),
+      content: messageText,
+      senderId: 'agent',
+      receiverId: 'client',
+      senderType: 'agent',
+      conversationId: selectedChat.id,
       timestamp: new Date().toLocaleTimeString('es-PE', { 
         hour: '2-digit', 
         minute: '2-digit' 
       }),
-      status: 'sent'
+      type: 'text',
+      channel: 'whatsapp',
+      status: 'sent',
+      isEdited: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isRead: false
     };
 
     // Update messages for selected chat
@@ -77,7 +86,7 @@ export const useChat = () => {
     }
   };
 
-  const handleAssignSalesperson = (chatId: number, salesperson: string) => {
+  const handleAssignSalesperson = (chatId: string, salesperson: string) => {
     setChats(prev => prev.map(chat => 
       chat.id === chatId ? { ...chat, assignedTo: salesperson } : chat
     ));

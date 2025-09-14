@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ user }) => {
     const [showMenu, setShowMenu] = useState(false);
-    const { logout, hasPermission } = useAuth();
+    const { logout, hasPermission, mounted } = useAuth();
     const router = useRouter();
 
     const handleLogout = () => {
@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
                         <span>Chat</span>
                     </button>
                     
-                    {(hasPermission('supervisor') || hasPermission('admin')) && (
+                    {(mounted && (hasPermission('supervisor') || hasPermission('admin'))) && (
                         <>
                             <button
                                 onClick={navigateToUsers}
@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
                                         <span>Chat</span>
                                     </button>
                                 
-                                {(hasPermission('supervisor') || hasPermission('admin')) && (
+                                {(mounted && (hasPermission('supervisor') || hasPermission('admin'))) && (
                                     <>
                                         <button
                                             onClick={navigateToUsers}
@@ -133,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
                                 </div>
 
                                  {/* Menu Options del usuario */}
-                                {(hasPermission('supervisor') || hasPermission('admin')) && (
+                                {(mounted && (hasPermission('supervisor') || hasPermission('admin'))) && (
                                     <>
                                         <button 
                                             onClick={navigateToUsers}

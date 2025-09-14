@@ -103,26 +103,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.sender === 'agent' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.senderId === 'agent' ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                message.sender === 'agent'
+                message.senderId === 'agent'
                   ? 'bg-green-500 text-white'
                   : 'bg-white text-gray-900 border border-gray-200'
               }`}
             >
-              <p>{message.text}</p>
+              <p>{message.content}</p>
               <div className={`flex items-center justify-end space-x-1 mt-1 text-xs ${
-                message.sender === 'agent' ? 'text-green-100' : 'text-gray-500'
+                message.senderId === 'agent' ? 'text-green-100' : 'text-gray-500'
               }`}>
                 <Clock className="w-3 h-3" />
-                <span>{message.timestamp}</span>
-                {message.sender === 'agent' && (
+                <span>{message.createdAt}</span>
+                {message.senderId === 'agent' && (
                   <>
-                    {message.status === 'sent' && <Check className="w-3 h-3" />}
-                    {message.status === 'delivered' && <CheckCheck className="w-3 h-3" />}
-                    {message.status === 'read' && <CheckCheck className="w-3 h-3 text-blue-300" />}
+                    {!message.isRead && <Check className="w-3 h-3" />}
+                    {message.isRead && <CheckCheck className="w-3 h-3 text-blue-300" />}
                   </>
                 )}
               </div>
