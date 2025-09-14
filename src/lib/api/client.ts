@@ -44,15 +44,15 @@ class ApiClient {
   
     // Interceptor para agregar token de autenticación
     private getAuthHeaders(): Record<string, string> {
-      if (typeof window === 'undefined') return {};
-      
-      try {
-        const token = localStorage.getItem('token');
-        return token ? { Authorization: `Bearer ${token}` } : {};
-      } catch (error) {
-        console.error('Error accessing token:', error);
-        return {};
-      }
+        if (typeof window === 'undefined') return {};
+        
+        try {
+            const token = localStorage.getItem('token');
+            return token ? { Authorization: `Bearer ${token}` } : {};
+        } catch (error) {
+            console.error('Error accessing token:', error);
+            return {};
+        }
     }
   
     // Construir URL con query parameters
@@ -170,12 +170,12 @@ class ApiClient {
       return this.request<T>({ method: 'GET', url, params });
     }
   
-    async post<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'POST', url, data });
+    async post<T = any>(url: string, data?: any, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'POST', url, data, params });
     }
   
-    async put<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'PUT', url, data });
+    async put<T = any>(url: string, data?: any, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'PUT', url, data, params });
     }
   
     async patch<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {

@@ -1,3 +1,9 @@
+// Re-export enhanced types
+export * from '@/types/chat';
+export * from '@/types/contact';
+export * from '@/types/chatbot';
+export * from '@/types/connections';
+
 // Tipos base
 export interface BaseEntity {
     id: string;
@@ -80,14 +86,14 @@ export interface Message extends BaseEntity {
     conversationId: string;
     type: 'text' | 'image' | 'file' | 'audio';
     isRead: boolean;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface Conversation extends BaseEntity {
     participantIds: string[];
     lastMessage?: Message;
     isActive: boolean;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface SendMessageRequest {
@@ -95,7 +101,7 @@ export interface SendMessageRequest {
     receiverId: string;
     conversationId?: string;
     type?: 'text' | 'image' | 'file' | 'audio';
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 // Tipos de Autenticación
