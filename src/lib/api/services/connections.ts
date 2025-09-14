@@ -2,10 +2,12 @@ import { apiClient } from '@/lib/api/client';
 import type {
     Connection,
     ConnectionFilters,
+    ConnectionHealth,
     ConnectionResponse,
     ConnectionsListResponse,
     CreateConnectionRequest,
     CreateConnectionResponse,
+    ProviderType,
     TenantContext,
     UpdateConnectionRequest
 } from '@/types/connections';
@@ -17,6 +19,9 @@ export interface IConnectionsService {
     updateConnection(data: UpdateConnectionRequest): Promise<Connection>;
     updateConnectionStatus(id: string, status: string): Promise<{ success: boolean}>;
     createWhatsAppConnection(data: any): Promise<any>;
+    testConnection(connectionData: CreateConnectionRequest): Promise<{ success: boolean; message: string; details?: any }>;
+    testWebhook(connectionId: string, webhookUrl: string, payload: any, secret?: string): Promise<{ success: boolean; message: string; details?: any }>;
+    updateWebhookConfig(connectionId: string, webhookConfig: any): Promise<{ success: boolean; data?: any }>;
 }
 
 
@@ -54,12 +59,84 @@ export class ConnectionsService implements IConnectionsService {
                 throw new Error('Failed to fetch connections');
             }
 
-            return response.data.data;
+            // Add mock health data for demonstration
+            const connectionsWithHealth = response.data.data.map(connection => ({
+                ...connection,
+                health: this.generateMockHealthData(connection)
+            }));
+
+            return connectionsWithHealth;
 
         }catch (error){
             console.error('Error fetching connections:', error);
             throw new Error('No se pudieron cargar las conexiones');
         }
+    }
+
+    private generateMockHealthData(connection: Connection): ConnectionHealth {
+        const isHealthy = connection.status === 'active';
+        const baseResponseTime = Math.floor(Math.random() * 200) + 50; // 50-250ms
+        const errorRate = isHealthy ? Math.random() * 5 : Math.random() * 20 + 10; // 0-5% for healthy, 10-30% for unhealthy
+        const messagesSent = Math.floor(Math.random() * 1000) + 100;
+        const messagesReceived = Math.floor(Math.random() * 800) + 80;
+        const errors = Math.floor((messagesSent + messagesReceived) * (errorRate / 100));
+
+        return {
+            isHealthy: isHealthy && errorRate < 10,
+            lastCheck: new Date().toISOString(),
+            uptime: isHealthy ? 95 + Math.random() * 5 : 60 + Math.random() * 30, // 95-100% for healthy, 60-90% for unhealthy
+            responseTime: baseResponseTime,
+            errorRate: errorRate,
+            lastError: !isHealthy ? {
+                message: this.getRandomErrorMessage(connection.providerType),
+                timestamp: new Date(Date.now() - Math.random() * 3600000).toISOString(), // Random time in last hour
+                code: 'ERR_' + Math.floor(Math.random() * 1000)
+            } : undefined,
+            metrics: {
+                messagesSent,
+                messagesReceived,
+                errors,
+                period: '24h'
+            }
+        };
+    }
+
+    private getRandomErrorMessage(providerType: ProviderType): string {
+        const errorMessages: Record<ProviderType, string[]> = {
+            whatsapp: [
+                'Conexión perdida con WhatsApp Web',
+                'Teléfono desconectado',
+                'Sesión expirada'
+            ],
+            whatsapp_api: [
+                'Token de acceso expirado',
+                'Límite de rate exceeded',
+                'Webhook no responde'
+            ],
+            facebook: [
+                'Permisos de página insuficientes',
+                'Token de página expirado',
+                'API rate limit exceeded'
+            ],
+            instagram: [
+                'Cuenta no verificada',
+                'Token de acceso inválido',
+                'Webhook configuration error'
+            ],
+            telegram: [
+                'Bot token inválido',
+                'Webhook URL no accesible',
+                'Message delivery failed'
+            ],
+            chatweb: [
+                'Servidor no disponible',
+                'Conexión timeout',
+                'Authentication failed'
+            ]
+        };
+
+        const messages = errorMessages[providerType] || ['Error desconocido'];
+        return messages[Math.floor(Math.random() * messages.length)];
     }
 
     async getConnectionById(id: number): Promise<Connection> {
@@ -177,6 +254,87 @@ export class ConnectionsService implements IConnectionsService {
         } catch (error) {
             console.error('Error creating WhatsApp connection:', error);
             throw new Error('No se pudo crear la conexión de WhatsApp');
+        }
+    }
+
+    async testConnection(connectionData: CreateConnectionRequest): Promise<{ success: boolean; message: string; details?: any }> {
+        try {
+            const response = await apiClient.request<{ success: boolean; message: string; details?: any }>({
+                method: 'POST',
+                url: `${this.basePath}/test`,
+                data: connectionData,
+                headers: this.getHeaders(),
+            });
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Error testing connection:', error);
+            
+            if (error.response?.data?.message) {
+                return {
+                    success: false,
+                    message: error.response.data.message,
+                    details: error.response.data.details
+                };
+            }
+            
+            return {
+                success: false,
+                message: 'Error al probar la conexión'
+            };
+        }
+    }
+
+    async testWebhook(connectionId: string, webhookUrl: string, payload: any, secret?: string): Promise<{ success: boolean; message: string; details?: any }> {
+        try {
+            const response = await apiClient.request<{ success: boolean; message: string; details?: any }>({
+                method: 'POST',
+                url: `${this.basePath}/${connectionId}/webhook/test`,
+                data: {
+                    webhookUrl,
+                    payload,
+                    secret
+                },
+                headers: this.getHeaders(),
+            });
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Error testing webhook:', error);
+            
+            if (error.response?.data?.message) {
+                return {
+                    success: false,
+                    message: error.response.data.message,
+                    details: error.response.data.details
+                };
+            }
+            
+            return {
+                success: false,
+                message: 'Error al probar el webhook'
+            };
+        }
+    }
+
+    async updateWebhookConfig(connectionId: string, webhookConfig: any): Promise<{ success: boolean; data?: any }> {
+        try {
+            const response = await apiClient.request<{ success: boolean; data?: any }>({
+                method: 'PUT',
+                url: `${this.basePath}/${connectionId}/webhook`,
+                data: webhookConfig,
+                headers: this.getHeaders(),
+            });
+
+            return response.data;
+        } catch (error: any) {
+            console.error('Error updating webhook config:', error);
+            
+            if (error.response?.data?.message) {
+                throw new Error(error.response.data.message);
+            }
+            
+            throw new Error('Error al actualizar la configuración del webhook');
         }
     }
 
