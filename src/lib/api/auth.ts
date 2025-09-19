@@ -11,7 +11,7 @@ export class AuthService {
           id: 'admin-001',
           name: 'Administrador',
           email: 'admin@inbox.com',
-          role: 'admin',
+          role: 'supervisor',
           department: 'Administración',
           isActive: true,
           permissions: ['all'],

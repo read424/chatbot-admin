@@ -1,6 +1,5 @@
 'use client';
 
-import type { User } from '@/lib/api/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,47 +23,16 @@ export const useAuth = () => {
   // Verificar persistencia al cargar (solo en el cliente)
   useEffect(() => {
     setMounted(true);
-
-    const checkAuth = () => {
-      // Verificar que estamos en el cliente
-      if (typeof window === 'undefined') return;
-      
-      try {
-        const savedUser = localStorage.getItem('user');
-        const savedToken = localStorage.getItem('token');
-        const sessionExpiry = localStorage.getItem('sessionExpiry');
-
-        // Verificar si hay usuario y token (del authService o del store)
-        if (savedUser && (savedToken || localStorage.getItem('isAuthenticated') === 'true')) {
-          // Verificar si la sesión no ha expirado
-          if (sessionExpiry && new Date(sessionExpiry) > new Date()) {
-            const userData: User = JSON.parse(savedUser);
-            setUser(userData);
-          } else {
-            // Sesión expirada, limpiar
-            clearExpiredSession();
-          }
-        }
-      } catch (error) {
-        console.error('Error loading auth state:', error);
-        // Si hay error, limpiar storage corrupto
-        clearExpiredSession();
-      }
-    };
-
-    checkAuth();
-  }, [setUser]);
+  }, []);
 
   // Limpiar sesión expirada
   const clearExpiredSession = useCallback(() => {
+    logout();
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('token');
       localStorage.removeItem('sessionExpiry');
       localStorage.removeItem('rememberMe');
     }
-  }, []);
+  }, [logout]);
 
   // Login con redirección y gestión de sesión
   const handleLogin = async (email: string, password: string, rememberMe: boolean = false): Promise<boolean> => {
@@ -83,10 +51,9 @@ export const useAuth = () => {
     return success;
   };
 
-  // Logout con redirección y limpieza de sesión
+  // Logout con redirección
   const handleLogout = () => {
     logout();
-    clearExpiredSession();
     router.push('/login');
   };
 
