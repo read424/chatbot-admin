@@ -2,7 +2,7 @@
 
 import { useWhatsAppConnection } from '@/hooks/useWhatsAppConnection';
 import { ProviderType } from '@/types/connections';
-import { AlertCircle, CheckCircle, Loader2, QrCode, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2, QrCode, RefreshCw, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 interface QRModalProps {
@@ -18,6 +18,7 @@ interface QRStatus {
     status: 'loading' | 'qr_ready' | 'connecting' | 'connected' | 'error' | 'timeout';
     qrCode?: string;
     message?: string;
+    showRetry?: boolean;
 }
 
 export const QRModal: React.FC<QRModalProps> = ({
@@ -33,7 +34,11 @@ export const QRModal: React.FC<QRModalProps> = ({
         status,
         errorMessage,
         isConnected,
-        createConnection
+        qrAttempts,
+        maxQrAttempts,
+        isQrTimeout,
+        createConnection,
+        restartConnection
     } = useWhatsAppConnection({
         connectionId,
         connectionName,
@@ -46,6 +51,7 @@ export const QRModal: React.FC<QRModalProps> = ({
             console.error('Connection error:', error);
         }
     });
+
     const hasStartedConnection = useRef(false);
 
     useEffect(() => {
@@ -81,12 +87,18 @@ export const QRModal: React.FC<QRModalProps> = ({
                 return { 
                     status: 'qr_ready', 
                     qrCode: qrCode, 
-                    message: 'Escanea el código QR con WhatsApp' 
+                    message: `Escanea el código QR con WhatsApp` 
                 };
             case 'connecting':
                 return { status: 'connecting', message: 'QR escaneado, conectando WhatsApp...' };
             case 'connected':
                 return { status: 'connected', message: '¡WhatsApp conectado exitosamente!' };
+            case 'timeout':
+                return { 
+                    status: 'timeout', 
+                    message: 'Se alcanzó el límite máximo de códigos QR. Haz clic en el botón para reintentar.',
+                    showRetry: true
+                };
             case 'error':
                 return { status: 'error', message: errorMessage };
             default:
@@ -95,6 +107,11 @@ export const QRModal: React.FC<QRModalProps> = ({
     };
 
     const qrStatus = getQRStatus();
+
+    const handleRetryConnection = async () => {
+        console.log('Intentando reiniciar conexión...');
+        await restartConnection();
+    };
 
     const getStatusContent = () => {
         switch (qrStatus.status) {
@@ -119,7 +136,7 @@ export const QRModal: React.FC<QRModalProps> = ({
                                     alt="QR Code"
                                     className={`w-48 h-48 ${status === 'connecting' ? 'opacity-30' : ''}`}
                                     onError={(e) => {
-                                        console.error('❌ Error cargando imagen QR:', e);
+                                        console.error('Error cargando imagen QR:', e);
                                     }}
                                 />
                                 {/* Overlay cuando está connecting */}
@@ -185,15 +202,63 @@ export const QRModal: React.FC<QRModalProps> = ({
                   <p className="text-sm text-gray-500 mt-2">Este modal se cerrará automáticamente...</p>
                 </div>
               );
+
+            case 'timeout':
+                return (
+                    <div className="flex flex-col items-center py-8">
+                        {/* QR Container con overlay */}
+                        <div className="relative mb-6">
+                            <div className="bg-white p-4 rounded-lg shadow-lg">
+                                <div className="w-48 h-48 bg-gray-100 flex items-center justify-center relative">
+                                    {/* Mostrar el último QR si existe, sino mostrar placeholder */}
+                                    {qrCode ? (
+                                        <img
+                                            src={qrCode}
+                                            alt="QR Code"
+                                            className="w-full h-full object-contain"
+                                        />
+                                    ) : (
+                                        <QrCode className="w-16 h-16 text-gray-300" />
+                                    )}
+                                    
+                                    {/* Overlay semitransparente */}
+                                    <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded">
+                                        <button
+                                            onClick={handleRetryConnection}
+                                            disabled={status === 'creating'}
+                                            className="flex flex-col items-center justify-center p-6 bg-blue-50 hover:bg-blue-100 transition-colors rounded-lg border-2 border-dashed border-blue-300 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            {status === 'creating' ? (
+                                                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                                            ) : (
+                                                <RefreshCw className="w-8 h-8 text-blue-500 mb-2" />
+                                            )}
+                                            <span className="text-blue-600 font-medium text-xs text-center">
+                                                {status === 'creating' ? 'Generando...' : 'Refresh QR code'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
       
             case 'error':
-            case 'timeout':
-              return (
-                <div className="flex flex-col items-center py-8">
-                  <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-                  <p className="text-red-600 dark:text-red-400 text-center mb-4">{qrStatus.message}</p>
-                </div>
-              );
+                return (
+                    <div className="flex flex-col items-center py-8">
+                        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                        <p className="text-red-600 dark:text-red-400 text-center mb-4">{qrStatus.message}</p>
+                        {qrStatus.showRetry && (
+                            <button
+                                onClick={handleRetryConnection}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Reintentar
+                            </button>
+                        )}
+                    </div>
+                );                
       
             default:
               return null;

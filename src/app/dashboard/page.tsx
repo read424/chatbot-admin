@@ -2,14 +2,14 @@
 
 import { ChatList } from '@/components/inbox/ChatList';
 import { ChatWindow } from '@/components/inbox/ChatWindow';
+import { ConnectionStatus } from '@/components/inbox/ConnectionStatus';
 import { CustomerInfo } from '@/components/inbox/CustomerInfo';
 import { Header } from '@/components/inbox/Header';
 import { RealtimeChatProvider } from '@/components/inbox/RealtimeChatProvider';
-import { ConnectionStatus } from '@/components/inbox/ConnectionStatus';
 import { useChat } from '@/hooks/useChat';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 import { useChatStore } from '@/stores/chatStore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function Home() {
   const {

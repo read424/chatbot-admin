@@ -62,9 +62,17 @@ export const usePermissions = (): UsePermissionsReturn => {
     return permissions.every(permission => hasPermission(userRole, permission));
   }, [userRole]);
 
-  // Verificar si el usuario tiene un rol específico
+  // Verificar si el usuario tiene un rol específico (considerando jerarquía)
   const checkRole = useCallback((role: UserRole): boolean => {
-    return userRole === role;
+    if (!userRole) return false;
+    
+    const roleHierarchy = {
+      'admin': 3,
+      'supervisor': 2,
+      'agent': 1
+    };
+    
+    return roleHierarchy[userRole] >= roleHierarchy[role];
   }, [userRole]);
 
   // Verificar si el usuario tiene al menos uno de los roles

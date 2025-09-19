@@ -11,6 +11,7 @@ import type {
     TenantContext,
     UpdateConnectionRequest
 } from '@/types/connections';
+import { CreateWhatsAppConnectionRequest, RestartWhatsAppConnectionRequest, RestartWhatsAppConnectionResponse, WhatsAppConnectionResponse } from '@/types/whatsapp-api';
 
 export interface IConnectionsService {
     getConnections(filters?: ConnectionFilters): Promise<Connection[]>;
@@ -19,6 +20,7 @@ export interface IConnectionsService {
     updateConnection(data: UpdateConnectionRequest): Promise<Connection>;
     updateConnectionStatus(id: string, status: string): Promise<{ success: boolean}>;
     createWhatsAppConnection(data: any): Promise<any>;
+    restartWhatsAppConnection(data: any): Promise<any>;
     testConnection(connectionData: CreateConnectionRequest): Promise<{ success: boolean; message: string; details?: any }>;
     testWebhook(connectionId: string, webhookUrl: string, payload: any, secret?: string): Promise<{ success: boolean; message: string; details?: any }>;
     updateWebhookConfig(connectionId: string, webhookConfig: any): Promise<{ success: boolean; data?: any }>;
@@ -247,13 +249,23 @@ export class ConnectionsService implements IConnectionsService {
         }
     }
 
-    async createWhatsAppConnection(data: any): Promise<any> {
+    async createWhatsAppConnection(data: CreateWhatsAppConnectionRequest): Promise<WhatsAppConnectionResponse> {
         try {
-            const response = await apiClient.post<any>(`/whatsapp/connect`, data, this.getHeaders());
+            const response = await apiClient.post<WhatsAppConnectionResponse>(`/whatsapp/connect`, data, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error('Error creating WhatsApp connection:', error);
             throw new Error('No se pudo crear la conexión de WhatsApp');
+        }
+    }
+
+    async restartWhatsAppConnection(data: RestartWhatsAppConnectionRequest): Promise<RestartWhatsAppConnectionResponse> {
+        try {
+            const response = await apiClient.post<RestartWhatsAppConnectionResponse>(`/whatsapp/restart-connection`, data, this.getHeaders());
+            return response.data;
+        }catch (error) {
+            console.error('Error restarting WhatsApp connection:', error);
+            throw new Error('No se pudo reiniciar la conexion de WhatsApp');
         }
     }
 

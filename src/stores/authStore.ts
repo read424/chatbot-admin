@@ -2,6 +2,7 @@
 
 import type { User } from '@/lib/api/types';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface AuthState {
   // State
@@ -66,76 +67,85 @@ const demoUsers: Record<string, { password: string; user: User }> = {
   }
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  // Initial state - Asegurar consistencia entre servidor y cliente
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
-  error: null,
-
-  // Login function
-  login: async (email: string, password: string): Promise<boolean> => {
-    set({ isLoading: true, error: null });
-
-    try {
-      // Simular delay de API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const demoUser = demoUsers[email.toLowerCase()];
-      
-      if (!demoUser || demoUser.password !== password) {
-        set({ 
-          error: 'Credenciales inválidas. Intenta con admin@inbox.com / admin123',
-          isLoading: false 
-        });
-        return false;
-      }
-
-      // Login exitoso
-      set({
-        user: demoUser.user,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null
-      });
-
-      // Guardar en localStorage para persistencia (solo en el cliente)
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user', JSON.stringify(demoUser.user));
-        localStorage.setItem('isAuthenticated', 'true');
-      }
-
-      return true;
-    } catch (error) {
-      set({
-        error: 'Error de conexión. Intenta nuevamente.',
-        isLoading: false
-      });
-      return false;
-    }
-  },
-
-  // Logout function
-  logout: () => {
-    set({
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
       user: null,
       isAuthenticated: false,
-      error: null
-    });
+      isLoading: false,
+      error: null,
 
-    // Limpiar localStorage (solo en el cliente)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
+      // Login function
+      login: async (email: string, password: string): Promise<boolean> => {
+        set({ isLoading: true, error: null });
+
+        try {
+          // Simular delay de API
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          const demoUser = demoUsers[email.toLowerCase()];
+          
+          if (!demoUser || demoUser.password !== password) {
+            set({ 
+              error: 'Credenciales inválidas. Intenta con admin@inbox.com / admin123',
+              isLoading: false 
+            });
+            return false;
+          }
+
+          // Login exitoso
+          set({
+            user: demoUser.user,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null
+          });
+
+          return true;
+        } catch (error) {
+          set({
+            error: 'Error de conexión. Intenta nuevamente.',
+            isLoading: false
+          });
+          return false;
+        }
+      },
+
+      // Logout function
+      logout: () => {
+        set({
+          user: null,
+          isAuthenticated: false,
+          error: null
+        });
+        
+        // Limpiar el storage persistente
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage');
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('token');
+          localStorage.removeItem('sessionExpiry');
+          localStorage.removeItem('rememberMe');
+        }
+      },
+
+      // Clear error
+      clearError: () => set({ error: null }),
+
+      // Set user (para persistencia)
+      setUser: (user: User) => set({ 
+        user, 
+        isAuthenticated: true 
+      })
+    }),
+    {
+      name: 'auth-storage', // nombre único para el storage
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }), // solo persistir user e isAuthenticated
     }
-  },
-
-  // Clear error
-  clearError: () => set({ error: null }),
-
-  // Set user (para persistencia)
-  setUser: (user: User) => set({ 
-    user, 
-    isAuthenticated: true 
-  })
-}));
+  )
+);
