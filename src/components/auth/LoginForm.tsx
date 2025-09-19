@@ -1,9 +1,9 @@
 'use client';
 
+import { useAuth } from '@/hooks/useAuth';
 import { useLoginAttempts } from '@/hooks/useLoginAttempts';
 import { useRememberMe } from '@/hooks/useRememberMe';
 import { ApiError } from '@/lib/api';
-import { authService } from '@/lib/api/auth';
 import { validatePasswordStrength } from '@/utils/passwordValidation';
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail, MessageSquare, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,8 @@ export const LoginForm: React.FC = () => {
         hasValidRememberMe
     } = useRememberMe();
 
+    const { login } = useAuth();
+
     // Cargar email recordado al inicializar
     useEffect(() => {
         const rememberedEmail = getRememberedEmail();
@@ -72,22 +74,27 @@ export const LoginForm: React.FC = () => {
                 return;
             }
 
-            const response = await authService.login({ email, password });
+            // Usar el hook useAuth en lugar de authService directamente
+            const success = await login(email, password);
             
-            console.log('Login exitoso:', response);
-            
-            // Limpiar intentos fallidos en caso de éxito
-            clearAttempts(email);
-            
-            // Manejar "Remember Me"
-            if (rememberMe) {
-                saveRememberMe(email, response.token);
+            if (success) {
+                console.log('Login exitoso');
+                
+                // Limpiar intentos fallidos en caso de éxito
+                clearAttempts(email);
+                
+                // Manejar "Remember Me"
+                if (rememberMe) {
+                    saveRememberMe(email, 'mock-token');
+                } else {
+                    clearRememberMe();
+                }
+                
+                // Redirigir al dashboard
+                router.push('/dashboard');
             } else {
-                clearRememberMe();
+                throw new Error('Credenciales inválidas');
             }
-            
-            // Redirigir al dashboard
-            router.push('/dashboard');
             
         } catch (err) {
             const apiError = err as ApiError;

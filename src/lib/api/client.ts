@@ -166,24 +166,43 @@ class ApiClient {
     }
   
     // Métodos de conveniencia
-    async get<T = any>(url: string, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'GET', url, params });
+    async get<T = any>(
+        url: string, 
+        params?: Record<string, string | number>,
+        headers?: Record<string, string>
+    ): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'GET', url, params, headers });
     }
   
-    async post<T = any>(url: string, data?: any, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'POST', url, data, params });
+    async post<T = any>(
+        url: string, 
+        data?: any, 
+        headers?: Record<string, string>,
+        params?: Record<string, string | number>): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'POST', url, data, headers, params });
     }
   
-    async put<T = any>(url: string, data?: any, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'PUT', url, data, params });
+    async put<T = any>(
+        url: string, 
+        data?: any, 
+        headers?: Record<string, string>,
+        params?: Record<string, string | number>): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'PUT', url, data, headers, params });
     }
   
-    async patch<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'PATCH', url, data });
+    async patch<T = any>(
+        url: string, 
+        data?: any,
+        headers?: Record<string, string>
+    ): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'PATCH', url, data, headers });
     }
   
-    async delete<T = any>(url: string): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'DELETE', url });
+    async delete<T = any>(
+        url: string,
+        headers?: Record<string, string>
+    ): Promise<ApiResponse<T>> {
+      return this.request<T>({ method: 'DELETE', url, headers });
     }
 }
   

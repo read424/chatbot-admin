@@ -63,6 +63,7 @@ export const API_ENDPOINTS = {
 // WhatsApp Connection Events
 export const WHATSAPP_EVENTS = {
   QR_CODE: 'qrCode',
+  QR_TIMEOUT: 'qrTimeout',
   WHATSAPP_READY: 'whatsappReady',
   WHATSAPP_DISCONNECTED: 'whatsappDisconnected',
   LOADING_SCREEN: 'loadingScreen',
