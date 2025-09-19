@@ -1,5 +1,6 @@
 import { useSocket } from '@/contexts/SocketIOContext';
 import { connectionsService } from '@/lib/api/services/connections';
+import { AuthenticatedEventData, LoadingScreenEventData, QRCodeEventData, QRTimeoutEventData, WhatsAppDisconnectedEventData, WhatsAppReadyEventData } from '@/types/whatsapp-events';
 import { WHATSAPP_EVENTS } from '@/utils/constants';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -22,8 +23,12 @@ export const useWhatsAppConnection = ({
     
     const [clientId, setClientId] = useState<string>('');
     const [qrCode, setQrCode] = useState<string>('');
-    const [status, setStatus] = useState<'idle' | 'creating' | 'waiting_qr' | 'qr_ready' | 'connecting' | 'connected' | 'error'>('idle');
+    const [status, setStatus] = useState<'idle' | 'creating' | 'waiting_qr' | 'qr_ready' | 'connecting' | 'connected' | 'error' | 'timeout'>('idle');
     const [errorMessage, setErrorMessage] = useState<string>('');
+
+    const [qrAttempts, setQrAttempts] = useState<number>(0);
+    const [maxQrAttempts, setMaxQrAttempts] = useState<number>(4);
+    const [isQrTimeout, setIsQrTimeout] = useState<boolean>(false);
 
     // Crear nueva conexión
     const createConnection = useCallback(async () => {
@@ -34,9 +39,11 @@ export const useWhatsAppConnection = ({
         }
 
         try {
-            console.log('📡 Enviando petición...');
+            console.log('Enviando petición...');
             setStatus('creating');
             setErrorMessage('');
+            setIsQrTimeout(false);
+            setQrAttempts(0);
             
             const response = await connectionsService.createWhatsAppConnection({
                 connectionId,
@@ -52,6 +59,8 @@ export const useWhatsAppConnection = ({
                 if (response.qr) {
                     setQrCode(response.qr);
                     setStatus('qr_ready');
+                    setQrAttempts(response.qrAttempts || 0);
+                    setMaxQrAttempts(response.maxQrAttempts || 4);
                 }                
             } else {
                 throw new Error(response.error || 'Error al crear la conexión');
@@ -65,6 +74,40 @@ export const useWhatsAppConnection = ({
         }
     }, [isConnected, connectionId, connectionName, tenantId, onError]);
 
+    const restartConnection = useCallback(async () => {
+        if(!isConnected){
+            setErrorMessage('No hay conexión Socket.IO');
+            setStatus('error');
+            return;
+        }
+
+        try {
+            console.log('Reiniciando conexión...');
+            setStatus('creating');
+            setErrorMessage('');
+            setIsQrTimeout(false);
+            setQrAttempts(0);
+            setQrCode('');
+
+            const response = await connectionsService.restartWhatsAppConnection({
+                clientId: clientId,
+                tenantId: tenantId
+            });
+
+            if (response.success) {
+                setStatus('waiting_qr');
+                console.log('Conexion reiniciada exitosamente:', response);
+            }else{
+                throw new Error(response.error || 'Error al reiniciar la conexión');
+            }
+        }catch (error: any) {
+            console.error('Error restarting connection:', error);
+            const errorMsg = error.message || 'Error al reiniciar la conexión';
+            setErrorMessage(errorMsg);
+            onError?.(errorMsg);
+        }
+    }, [isConnected, clientId, tenantId, onError]);
+
     // Conectarse a la sala del tenant cuando se inicializa
     useEffect(() => {
         if (isConnected && tenantId) {
@@ -76,7 +119,7 @@ export const useWhatsAppConnection = ({
     useEffect(() => {
         if (!isConnected) return;
     
-        const handleQRCode = (data: any) => {
+        const handleQRCode = (data: QRCodeEventData) => {
             console.log('QR Code received:', data);
         
             // Verificar que el evento sea para este cliente
@@ -86,19 +129,31 @@ export const useWhatsAppConnection = ({
             }
         };
 
-        const handleLoadingScreen = (data: any) => {
+        const handleQRTimeout = (data: QRTimeoutEventData) => {
+            console.log('QR Timeout received:', data);
+
+            if (data.clientId === clientId) {
+                setStatus('timeout');
+                setIsQrTimeout(true);
+                //setQrCode('');
+                setErrorMessage(data.message || 'Se alcanzó el límite máximo de códigos QR. Haz clic en el botón para reintentar.');
+                onError?.(data.message || 'Qr timeout');
+            }
+        };
+
+        const handleLoadingScreen = (data: LoadingScreenEventData) => {
             if(data.clientId === clientId) {
                 setStatus('connecting');
             }
         };
 
-        const handleAuthenticated = (data: any) => {
+        const handleAuthenticated = (data: AuthenticatedEventData) => {
             if(data.clientId === clientId) {
                 setStatus('connected');
             }
         };
 
-        const handleWhatsAppReady = (data: any) => {
+        const handleWhatsAppReady = (data: WhatsAppReadyEventData) => {
             console.log('WhatsApp ready event received:', data);
             
             // Verificar que el evento sea para este cliente
@@ -108,7 +163,7 @@ export const useWhatsAppConnection = ({
             }
         };
     
-        const handleWhatsAppDisconnected = (data: any) => {
+        const handleWhatsAppDisconnected = (data: WhatsAppDisconnectedEventData) => {
             console.log('WhatsApp disconnected event received:', data);
         
             // Verificar que el evento sea para este cliente
@@ -121,6 +176,7 @@ export const useWhatsAppConnection = ({
     
         // Registrar listeners
         on(WHATSAPP_EVENTS.QR_CODE, handleQRCode);
+        on(WHATSAPP_EVENTS.QR_TIMEOUT, handleQRTimeout);
         on(WHATSAPP_EVENTS.WHATSAPP_READY, handleWhatsAppReady);
         on(WHATSAPP_EVENTS.WHATSAPP_DISCONNECTED, handleWhatsAppDisconnected);
         on(WHATSAPP_EVENTS.LOADING_SCREEN, handleLoadingScreen);
@@ -130,6 +186,7 @@ export const useWhatsAppConnection = ({
         // Cleanup
         return () => {
             off(WHATSAPP_EVENTS.QR_CODE, handleQRCode);
+            off(WHATSAPP_EVENTS.QR_TIMEOUT, handleQRTimeout);
             off(WHATSAPP_EVENTS.WHATSAPP_READY, handleWhatsAppReady);
             off(WHATSAPP_EVENTS.WHATSAPP_DISCONNECTED, handleWhatsAppDisconnected);
             off(WHATSAPP_EVENTS.LOADING_SCREEN, handleLoadingScreen);
@@ -143,6 +200,10 @@ export const useWhatsAppConnection = ({
         status,
         errorMessage,
         isConnected,
-        createConnection
+        qrAttempts,
+        maxQrAttempts,
+        isQrTimeout,
+        createConnection,
+        restartConnection
     };
 };
