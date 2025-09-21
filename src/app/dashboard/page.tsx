@@ -9,6 +9,7 @@ import { RealtimeChatProvider } from '@/components/inbox/RealtimeChatProvider';
 import { useChat } from '@/hooks/useChat';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 import { useChatStore } from '@/stores/chatStore';
+import type { TypingIndicator } from '@/types/chat';
 import { useState } from 'react';
 
 export default function Home() {
@@ -101,7 +102,11 @@ export default function Home() {
         {/* Connection Status Bar */}
         <div className="px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600">
           <div className="flex items-center justify-between">
-            <ConnectionStatus />
+            <ConnectionStatus 
+              status={isConnected ? 'connected' : 'disconnected'}
+              showText={true}
+              onlineUsers={0}
+            />
             <div className="text-xs text-gray-500 dark:text-gray-400">
               {conversations.length > 0 
                 ? `${conversations.length} conversaciones • ${chats.length} chats legacy`
@@ -132,7 +137,7 @@ export default function Home() {
             onSendMessage={handleEnhancedSendMessage}
             onUpdateClient={handleUpdateClient}
             isTyping={typingUsers.length > 0}
-            typingUsers={typingUsers.map(t => t.userName)}
+            typingUsers={typingUsers.map((t: TypingIndicator) => t.userName)}
           />
           
           <CustomerInfo 
