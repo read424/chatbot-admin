@@ -1,28 +1,28 @@
 'use client';
 
-import type { Chat, Message, MessageType, MessageStatus, Conversation } from '@/types/chat';
+import type { Chat, Message, MessageStatus, MessageType } from '@/types/chat';
 import type { ProviderType } from '@/types/connections';
-import { 
-  Check, 
-  CheckCheck, 
-  Clock, 
-  Edit3, 
-  Mail, 
-  Phone, 
-  User,
-  MessageSquare,
-  Instagram,
-  Facebook,
-  Send,
-  Bot,
-  AlertCircle,
-  FileText,
-  Image,
-  Mic,
-  Video,
-  MapPin,
-  UserCheck,
-  X
+import type { Conversation } from '@/types/inbox';
+import {
+    AlertCircle,
+    Bot,
+    Check,
+    CheckCheck,
+    Clock,
+    Edit3,
+    Facebook,
+    FileText,
+    Image,
+    Instagram,
+    Mail,
+    MapPin,
+    MessageSquare,
+    Mic,
+    Phone,
+    Send,
+    User,
+    UserCheck,
+    Video
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { EditClientModal } from '../modals/EditClientModal';
@@ -149,7 +149,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="w-3/5 bg-white flex flex-col">
       {/* Header del chat */}
-      <div className="p-4 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 flex items-center justify-between">
+      <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center space-x-3 flex-1">
           <div className="w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
             <User className="w-6 h-6 text-gray-600 dark:text-gray-300" />
@@ -226,7 +226,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       </div>
 
       {/* Mensajes */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-800">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -240,7 +240,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     ? 'bg-green-500 text-white'
                     : message.senderType === 'bot'
                     ? 'bg-blue-500 text-white'
-                    : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
+                    : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600'
                 }`}
               >
                 {/* Message header with channel and type indicators */}
