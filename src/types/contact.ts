@@ -17,6 +17,7 @@ export interface Contact {
   createdAt: string;
   updatedAt: string;
   lastInteraction?: string;
+  totalInteractions?: number;
 }
 
 export interface ContactNote {

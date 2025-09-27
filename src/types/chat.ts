@@ -224,3 +224,10 @@ export interface MessageResponse {
   success: boolean;
   data: Message;
 }
+
+export interface Notification {
+    id: string;
+    message: string;
+    time: string;
+    isRead: boolean;
+  }

@@ -86,13 +86,13 @@ export const useChat = () => {
     }
   };
 
-  const handleAssignSalesperson = (chatId: string, salesperson: string) => {
+  const handleAssignSalesperson = async(conversationId: string, agentId: string) => {
     setChats(prev => prev.map(chat => 
-      chat.id === chatId ? { ...chat, assignedTo: salesperson } : chat
+      chat.id === conversationId ? { ...chat, assignedTo: agentId } : chat
     ));
     
-    if (selectedChat?.id === chatId) {
-      setSelectedChat(prev => prev ? { ...prev, assignedTo: salesperson } : null);
+    if (selectedChat?.id === conversationId) {
+      setSelectedChat(prev => prev ? { ...prev, assignedTo: agentId } : null);
     }
   };
 
