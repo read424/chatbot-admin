@@ -12,27 +12,28 @@ interface RequestConfig {
     params?: Record<string, string | number>;
     headers?: Record<string, string>;
     timeout?: number;
+    skipAuthRedirect?: boolean; // Skip automatic 401 redirect to login
 }
-  
+
 interface ApiResponse<T = any> {
     data: T;
     status: number;
     statusText: string;
     headers: Headers;
 }
-  
+
 interface ApiError {
     message: string;
     status?: number;
     code?: string;
     details?: any;
 }
-  
+
 class ApiClient {
     private baseURL: string;
     private defaultHeaders: Record<string, string>;
     private timeout: number;
-  
+
     constructor(config: ApiClientConfig) {
         this.baseURL = config.baseURL;
         this.timeout = config.timeout || 10000;
@@ -41,11 +42,11 @@ class ApiClient {
             ...config.headers,
         };
     }
-  
+
     // Interceptor para agregar token de autenticación
     private getAuthHeaders(): Record<string, string> {
         if (typeof window === 'undefined') return {};
-        
+
         try {
             const token = localStorage.getItem('token');
             return token ? { Authorization: `Bearer ${token}` } : {};
@@ -54,25 +55,38 @@ class ApiClient {
             return {};
         }
     }
-  
+
+    // Interceptor para agregar tenant ID
+    private getTenantHeaders(): Record<string, string> {
+        if (typeof window === 'undefined') return {};
+
+        try {
+            const tenantId = localStorage.getItem('tenantId');
+            return tenantId ? { 'X-Tenant-Id': tenantId } : {};
+        } catch (error) {
+            console.error('Error accessing tenantId:', error);
+            return {};
+        }
+    }
+
     // Construir URL con query parameters
     private buildURL(url: string, params?: Record<string, string | number>): string {
-      const fullURL = `${this.baseURL}${url}`;
-      if (!params) return fullURL;
-  
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        searchParams.append(key, String(value));
-      });
-  
-      return `${fullURL}?${searchParams.toString()}`;
+        const fullURL = `${this.baseURL}${url}`;
+        if (!params) return fullURL;
+
+        const searchParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            searchParams.append(key, String(value));
+        });
+
+        return `${fullURL}?${searchParams.toString()}`;
     }
-  
+
     // Manejar errores de la API
-    private async handleError(response: Response): Promise<never> {
+    private async handleError(response: Response, skipAuthRedirect: boolean = false): Promise<never> {
         let errorMessage = 'Error en la petición';
         let errorDetails: any = null;
-  
+
         try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorData.error || errorMessage;
@@ -81,16 +95,16 @@ class ApiClient {
             // Si no se puede parsear el JSON, usar el status text
             errorMessage = response.statusText || errorMessage;
         }
-  
+
         const apiError: ApiError = {
             message: errorMessage,
             status: response.status,
             code: response.status.toString(),
             details: errorDetails,
         };
-  
+
         // Manejar casos específicos
-        if (response.status === 401 && typeof window !== 'undefined') {
+        if (response.status === 401 && typeof window !== 'undefined' && !skipAuthRedirect) {
             // Token expirado o inválido
             try {
                 localStorage.removeItem('token');
@@ -99,10 +113,10 @@ class ApiClient {
                 console.error('Error handling auth error:', error);
             }
         }
-  
+
         throw apiError;
     }
-  
+
     // Método principal para hacer requests
     async request<T = any>(config: RequestConfig): Promise<ApiResponse<T>> {
         const {
@@ -112,39 +126,52 @@ class ApiClient {
             params,
             headers: requestHeaders = {},
             timeout = this.timeout,
+            skipAuthRedirect = false,
         } = config;
-  
+
         const fullURL = this.buildURL(url, params);
-        const headers = {
-            ...this.defaultHeaders,
+
+        // Check if data is FormData to handle headers correctly
+        const isFormData = data instanceof FormData;
+
+        // Build headers - exclude Content-Type for FormData (browser will set it with boundary)
+        const headers: Record<string, string> = {
+            ...(isFormData ? {} : this.defaultHeaders), // Skip default Content-Type for FormData
             ...this.getAuthHeaders(),
+            ...this.getTenantHeaders(),
             ...requestHeaders,
         };
-  
+
+        // Remove Content-Type if it was added for FormData
+        if (isFormData && headers['Content-Type']) {
+            delete headers['Content-Type'];
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
-  
+
         try {
             const requestInit: RequestInit = {
                 method,
                 headers,
                 signal: controller.signal,
             };
-  
+
             // Solo agregar body para métodos que lo soportan
             if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
-                requestInit.body = JSON.stringify(data);
+                // For FormData, pass it directly; for others, stringify
+                requestInit.body = isFormData ? data : JSON.stringify(data);
             }
-  
+
             const response = await fetch(fullURL, requestInit);
             clearTimeout(timeoutId);
-  
+
             if (!response.ok) {
-                await this.handleError(response);
+                await this.handleError(response, skipAuthRedirect);
             }
-  
+
             const responseData = await response.json();
-  
+
             return {
                 data: responseData,
                 status: response.status,
@@ -153,65 +180,65 @@ class ApiClient {
             };
         } catch (error) {
             clearTimeout(timeoutId);
-            
+
             if (error instanceof Error && error.name === 'AbortError') {
-            throw {
-                message: 'Timeout: La petición tardó demasiado',
-                code: 'TIMEOUT',
-            } as ApiError;
+                throw {
+                    message: 'Timeout: La petición tardó demasiado',
+                    code: 'TIMEOUT',
+                } as ApiError;
             }
-    
+
             throw error;
         }
     }
-  
+
     // Métodos de conveniencia
     async get<T = any>(
-        url: string, 
+        url: string,
         params?: Record<string, string | number>,
         headers?: Record<string, string>
     ): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'GET', url, params, headers });
+        return this.request<T>({ method: 'GET', url, params, headers });
     }
-  
+
     async post<T = any>(
-        url: string, 
-        data?: any, 
+        url: string,
+        data?: any,
         headers?: Record<string, string>,
         params?: Record<string, string | number>): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'POST', url, data, headers, params });
+        return this.request<T>({ method: 'POST', url, data, headers, params });
     }
-  
+
     async put<T = any>(
-        url: string, 
-        data?: any, 
+        url: string,
+        data?: any,
         headers?: Record<string, string>,
         params?: Record<string, string | number>): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'PUT', url, data, headers, params });
+        return this.request<T>({ method: 'PUT', url, data, headers, params });
     }
-  
+
     async patch<T = any>(
-        url: string, 
+        url: string,
         data?: any,
         headers?: Record<string, string>
     ): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'PATCH', url, data, headers });
+        return this.request<T>({ method: 'PATCH', url, data, headers });
     }
-  
+
     async delete<T = any>(
         url: string,
         headers?: Record<string, string>
     ): Promise<ApiResponse<T>> {
-      return this.request<T>({ method: 'DELETE', url, headers });
+        return this.request<T>({ method: 'DELETE', url, headers });
     }
 }
-  
+
 // Instancia principal del cliente API
 export const apiClient = new ApiClient({
     baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://api-tlm.localhost/api',
     timeout: 10000,
 });
-  
+
 export { ApiClient };
 export type { ApiError, ApiResponse };
 

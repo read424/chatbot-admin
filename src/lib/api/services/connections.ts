@@ -18,7 +18,7 @@ export interface IConnectionsService {
     getConnectionById(id: number): Promise<Connection>;
     createConnection(data: CreateConnectionRequest): Promise<CreateConnectionResponse>;
     updateConnection(data: UpdateConnectionRequest): Promise<Connection>;
-    updateConnectionStatus(id: string, status: string): Promise<{ success: boolean}>;
+    updateConnectionStatus(id: string, status: string): Promise<{ success: boolean }>;
     createWhatsAppConnection(data: any): Promise<any>;
     restartWhatsAppConnection(data: any): Promise<any>;
     testConnection(connectionData: CreateConnectionRequest): Promise<{ success: boolean; message: string; details?: any }>;
@@ -45,7 +45,7 @@ export class ConnectionsService implements IConnectionsService {
 
     async getConnections(filters?: ConnectionFilters): Promise<Connection[]> {
         try {
-            const params: Record<string, string> =  {};
+            const params: Record<string, string> = {};
 
             if (filters?.provider) {
                 params.provider = filters.provider;
@@ -69,7 +69,7 @@ export class ConnectionsService implements IConnectionsService {
 
             return connectionsWithHealth;
 
-        }catch (error){
+        } catch (error) {
             console.error('Error fetching connections:', error);
             throw new Error('No se pudieron cargar las conexiones');
         }
@@ -173,19 +173,19 @@ export class ConnectionsService implements IConnectionsService {
                 data,
                 headers: this.getHeaders(),
             });
-    
+
             if (!response.data.success) {
                 throw new Error(response.data.message || 'Error al crear la conexión');
             }
-    
-            return response.data;            
+
+            return response.data;
         } catch (error: any) {
             console.error('Error creating connection:', error);
-      
+
             if (error instanceof Error) {
-              throw error;
+                throw error;
             }
-            
+
             throw new Error('No se pudo crear la conexión');
         }
     }
@@ -206,52 +206,55 @@ export class ConnectionsService implements IConnectionsService {
             };
 
             const response = await apiClient.put<ConnectionResponse>(
-                `${this.basePath}/${data.id}`, 
+                `${this.basePath}/${data.id}`,
                 updatePayload,
                 this.getHeaders()
             );
-        
+
             if (!response.data.success) {
                 throw new Error('Error al actualizar la conexión');
             }
-        
+
             return response.data.data;
 
-        }catch (error){
+        } catch (error) {
             console.error('Error updating connection:', error);
-      
+
             if (error instanceof Error) {
-              throw error;
+                throw error;
             }
-            
+
             throw new Error('No se pudo actualizar la conexión');
         }
     }
 
     async updateConnectionStatus(id: string, status: string): Promise<{ success: boolean }> {
         try {
-          const validStatuses = ['active', 'inactive', 'error', 'connecting'];
-          if (!validStatuses.includes(status)) {
-            throw new Error('Estado inválido');
-          }
-    
-          const response = await apiClient.request<{ success: boolean }>({
-            method: 'PATCH',
-            url: `${this.basePath}/${id}/status`,
-            data: { status },
-            headers: this.getHeaders(),
-          });
-    
-          return response.data;
+            const validStatuses = ['active', 'inactive', 'error', 'connecting'];
+            if (!validStatuses.includes(status)) {
+                throw new Error('Estado inválido');
+            }
+
+            const response = await apiClient.request<{ success: boolean }>({
+                method: 'PATCH',
+                url: `${this.basePath}/${id}/status`,
+                data: { status },
+                headers: this.getHeaders(),
+            });
+
+            return response.data;
         } catch (error) {
-          console.error('Error updating connection status:', error);
-          throw new Error('No se pudo actualizar el estado de la conexión');
+            console.error('Error updating connection status:', error);
+            throw new Error('No se pudo actualizar el estado de la conexión');
         }
     }
 
     async createWhatsAppConnection(data: CreateWhatsAppConnectionRequest): Promise<WhatsAppConnectionResponse> {
         try {
-            const response = await apiClient.post<WhatsAppConnectionResponse>(`/whatsapp/connect`, data, this.getHeaders());
+            const requestBody = {
+                connectionId: data.connectionId
+            };
+            const response = await apiClient.post<WhatsAppConnectionResponse>(`/whatsapp/connect`, requestBody, this.getHeaders());
             return response.data;
         } catch (error) {
             console.error('Error creating WhatsApp connection:', error);
@@ -263,7 +266,7 @@ export class ConnectionsService implements IConnectionsService {
         try {
             const response = await apiClient.post<RestartWhatsAppConnectionResponse>(`/whatsapp/restart-connection`, data, this.getHeaders());
             return response.data;
-        }catch (error) {
+        } catch (error) {
             console.error('Error restarting WhatsApp connection:', error);
             throw new Error('No se pudo reiniciar la conexion de WhatsApp');
         }
@@ -281,7 +284,7 @@ export class ConnectionsService implements IConnectionsService {
             return response.data;
         } catch (error: any) {
             console.error('Error testing connection:', error);
-            
+
             if (error.response?.data?.message) {
                 return {
                     success: false,
@@ -289,7 +292,7 @@ export class ConnectionsService implements IConnectionsService {
                     details: error.response.data.details
                 };
             }
-            
+
             return {
                 success: false,
                 message: 'Error al probar la conexión'
@@ -313,7 +316,7 @@ export class ConnectionsService implements IConnectionsService {
             return response.data;
         } catch (error: any) {
             console.error('Error testing webhook:', error);
-            
+
             if (error.response?.data?.message) {
                 return {
                     success: false,
@@ -321,7 +324,7 @@ export class ConnectionsService implements IConnectionsService {
                     details: error.response.data.details
                 };
             }
-            
+
             return {
                 success: false,
                 message: 'Error al probar el webhook'
@@ -341,11 +344,11 @@ export class ConnectionsService implements IConnectionsService {
             return response.data;
         } catch (error: any) {
             console.error('Error updating webhook config:', error);
-            
+
             if (error.response?.data?.message) {
                 throw new Error(error.response.data.message);
             }
-            
+
             throw new Error('Error al actualizar la configuración del webhook');
         }
     }

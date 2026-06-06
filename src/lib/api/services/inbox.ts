@@ -1,16 +1,16 @@
 import {
-    Conversation,
-    ConversationFilters,
-    ConversationListResponse,
-    ConversationSort,
-    CreateConversationNoteRequest,
-    Message,
-    MessageListResponse,
-    PaginationParams,
-    SendMessageRequest,
-    SendMessageWithAttachmentsRequest,
-    UpdateConversationRequest,
-    UpdateMessageRequest
+  Conversation,
+  ConversationFilters,
+  ConversationListResponse,
+  ConversationSort,
+  CreateConversationNoteRequest,
+  Message,
+  MessageListResponse,
+  PaginationParams,
+  SendMessageRequest,
+  SendMessageWithAttachmentsRequest,
+  UpdateConversationRequest,
+  UpdateMessageRequest
 } from '@/types/inbox';
 import { apiClient } from '../client';
 
@@ -25,7 +25,7 @@ export interface MessageQueryParams extends PaginationParams {
 }
 
 export class InboxService {
-  private readonly basePath = '/api/inbox';
+  private readonly basePath = '/inbox';
 
   // ===============================
   // CONVERSATIONS
@@ -36,7 +36,7 @@ export class InboxService {
    */
   async getConversations(params: ConversationQueryParams): Promise<ConversationListResponse> {
     const queryParams = new URLSearchParams();
-    
+
     // Pagination
     queryParams.append('page', params.page.toString());
     queryParams.append('limit', params.limit.toString());
@@ -44,7 +44,7 @@ export class InboxService {
     // Filters
     if (params.filters) {
       const { filters } = params;
-      
+
       if (filters.search) {
         queryParams.append('search', filters.search);
       }
@@ -172,10 +172,10 @@ export class InboxService {
    */
   async getMessages(conversationId: string, params: MessageQueryParams): Promise<MessageListResponse> {
     const queryParams = new URLSearchParams();
-    
+
     queryParams.append('page', params.page.toString());
     queryParams.append('limit', params.limit.toString());
-    
+
     if (params.before) {
       queryParams.append('before', params.before);
     }
@@ -206,35 +206,54 @@ export class InboxService {
   }
 
   /**
+   * Send a message via chat endpoint
+   * Endpoint: POST /api/chat/send-message
+   * Note: This endpoint skips automatic 401 redirect to allow debugging
+   */
+  async sendChatMessage(request: SendMessageRequest): Promise<Message> {
+    const response = await apiClient.request<{ data: Message }>({
+      method: 'POST',
+      url: '/chat/send-message',
+      data: {
+        conversationId: request.conversationId,
+        content: request.content,
+        type: request.type || 'text',
+        replyTo: request.replyTo,
+        metadata: request.metadata
+      },
+      skipAuthRedirect: true // Don't redirect on 401 - allow error inspection
+    });
+    return response.data.data;
+  }
+
+  /**
    * Send a message with attachments
    */
   async sendMessageWithAttachments(request: SendMessageWithAttachmentsRequest): Promise<Message> {
     const formData = new FormData();
-    
+
     formData.append('content', request.content);
     formData.append('type', request.type || 'text');
-    
+
     if (request.replyTo) {
       formData.append('replyTo', request.replyTo);
     }
-    
+
     if (request.metadata) {
       formData.append('metadata', JSON.stringify(request.metadata));
     }
 
     // Add attachments
     if (request.attachments) {
-      request.attachments.forEach((file, index) => {
+      request.attachments.forEach((file) => {
         formData.append(`attachments`, file);
       });
     }
 
+    // Don't set Content-Type header - let the browser set it with proper boundary for FormData
     const response = await apiClient.post<{ data: Message }>(
       `${this.basePath}/conversations/${request.conversationId}/messages`,
-      formData,
-      {
-        'Content-Type': 'multipart/form-data',
-      }
+      formData
     );
     return response.data.data;
   }
@@ -352,7 +371,7 @@ export class InboxService {
     messagesCount: number;
   }> {
     const queryParams = new URLSearchParams();
-    
+
     if (dateRange) {
       queryParams.append('from', dateRange.from.toISOString());
       queryParams.append('to', dateRange.to.toISOString());
@@ -381,7 +400,7 @@ export class InboxService {
   }> {
     const queryParams = new URLSearchParams();
     queryParams.append('q', query);
-    
+
     if (filters) {
       if (filters.conversationId) {
         queryParams.append('conversationId', filters.conversationId);
