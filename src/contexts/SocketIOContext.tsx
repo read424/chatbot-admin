@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 
 interface SocketIOContextType {
@@ -70,7 +70,7 @@ export const SocketIOProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };    
     }, []);
 
-    const connectToTenant = (tenantId: string) => {
+    const connectToTenant = useCallback((tenantId: string) => {
         if (socket && isConnected) {
             // Unirse al namespace del tenant
             socket.emit('join', tenantId);
@@ -84,18 +84,18 @@ export const SocketIOProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 isConnected 
             });
         }
-    };
+    }, [socket, isConnected]);
 
-    const disconnectFromTenant = () => {
+    const disconnectFromTenant = useCallback(() => {
         if (socket && currentTenantId) {
             // Salir del namespace del tenant
             console.log(`Leaving tenant: ${currentTenantId}`);
             socket.emit('leave');
             setCurrentTenantId(null);
         }
-    };
+    }, [socket, currentTenantId]);
 
-    const emit = (event: string, data: any) => {
+    const emit = useCallback((event: string, data: any) => {
         if (socket && isConnected) {
             console.log(`Emitting event: ${event}`, data);
 
@@ -105,16 +105,16 @@ export const SocketIOProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }else{
             console.warn('Cannot emit - Socket not connected', { event, data });
         }
-    };
+    }, [socket, isConnected, currentTenantId]);
 
-    const on = (event: string, callback: (data: any) => void) => {
+    const on = useCallback((event: string, callback: (data: any) => void) => {
         if (socket) {
             console.log(`Registering listener for event: ${event}`);
             socket.on(event, callback);
         }
-    };
+    }, [socket]);
 
-    const off = (event: string, callback?: (data: any) => void) => {
+    const off = useCallback((event: string, callback?: (data: any) => void) => {
         if (socket) {
             console.log(`Removing listener for event: ${event}`);
             if (callback) {
@@ -123,7 +123,7 @@ export const SocketIOProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 socket.off(event);
             }
         }
-    };
+    }, [socket]);
 
     return (
         <SocketIOContext.Provider value={{ 
