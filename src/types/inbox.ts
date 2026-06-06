@@ -68,43 +68,43 @@ export interface LocationData {
 }
 
 export interface ContactData {
-  name: string;
-  phone?: string;
-  email?: string;
-  organization?: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    organization?: string;
 }
 
 export interface TemplateData {
-  templateId: string;
-  templateName: string;
-  parameters: Record<string, string>;
+    templateId: string;
+    templateName: string;
+    parameters: Record<string, string>;
 }
 
 export interface MessageReaction {
-  emoji: string;
-  userId: string;
-  userName: string;
-  timestamp: string;
+    emoji: string;
+    userId: string;
+    userName: string;
+    timestamp: string;
 }
 
 export interface Conversation {
-  id: string;
-  contactId: string;
-  contact: Contact;
-  channel: ProviderType;
-  status: ConversationStatus;
-  assignedAgentId?: string;
-  assignedAgent?: ConversationAgent;
-  department: string;
-  lastMessage?: Message;
-  unreadCount: number;
-  tags: string[];
-  priority: ConversationPriority;
-  notes: ConversationNote[];
-  createdAt: string;
-  updatedAt: string;
-  closedAt?: string;
-  archivedAt?: string;
+    id: string;
+    contactId: string;
+    contact: Contact;
+    channel: ProviderType;
+    status: ConversationStatus;
+    assignedAgentId?: string;
+    assignedAgent?: ConversationAgent;
+    department: string;
+    lastMessage?: Message;
+    unreadCount: number;
+    tags: string[];
+    priority: ConversationPriority;
+    notes: ConversationNote[];
+    createdAt: string;
+    updatedAt: string;
+    closedAt?: string;
+    archivedAt?: string;
 }
 
 export type ConversationStatus = 'active' | 'pending' | 'closed' | 'archived';
@@ -338,3 +338,36 @@ export type {
 export type MessageWithConversation = Message & { conversation: Conversation };
 export type ConversationWithMessages = Conversation & { messages: Message[] };
 export type ConversationSummary = Pick<Conversation, 'id' | 'contactId' | 'channel' | 'status' | 'unreadCount' | 'lastMessage'>;
+
+// ===============================
+// BACKEND WEBSOCKET TYPES
+// ===============================
+
+/**
+ * Payload del backend para nuevos mensajes
+ * Este es el formato que el backend envía por WebSocket
+ */
+export interface BackendMessagePayload {
+  conversationId: string;
+  message: BackendChatMessage;
+  timestamp: string;
+}
+
+/**
+ * Estructura del mensaje del backend (ChatMessage entity)
+ */
+export interface BackendChatMessage {
+  id: number;
+  chatSessionId: number;
+  contactId: number;
+  content: string;
+  messageType: 'text' | 'image' | 'file' | 'audio' | 'video' | 'location' | 'contact';
+  direction: 'incoming' | 'outgoing';
+  status: number; // 0 = pendiente, 1 = enviado, 2 = entregado, 3 = leído, 4 = fallido
+  respondedBy?: number;
+  responderType?: 'agent' | 'bot';
+  tenantId: number;
+  createdAt: string;
+  updatedAt: string;
+  metadata?: Record<string, any>;
+}
