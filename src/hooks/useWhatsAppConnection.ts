@@ -5,11 +5,11 @@ import { WHATSAPP_EVENTS } from '@/utils/constants';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UseWhatsAppConnectionProps {
-  connectionId: string;
-  connectionName: string;
-  tenantId: string;
-  onSuccess?: () => void;
-  onError?: (error: string) => void;
+    connectionId: string;
+    connectionName: string;
+    tenantId: string;
+    onSuccess?: () => void;
+    onError?: (error: string) => void;
 }
 
 export const useWhatsAppConnection = ({
@@ -20,7 +20,7 @@ export const useWhatsAppConnection = ({
     onError
 }: UseWhatsAppConnectionProps) => {
     const { emit, on, off, isConnected, connectToTenant, disconnectFromTenant, currentTenantId } = useSocket();
-    
+
     const [clientId, setClientId] = useState<string>('');
     const [qrCode, setQrCode] = useState<string>('');
     const [status, setStatus] = useState<'idle' | 'creating' | 'waiting_qr' | 'qr_ready' | 'connecting' | 'connected' | 'error' | 'timeout'>('idle');
@@ -44,7 +44,7 @@ export const useWhatsAppConnection = ({
             setErrorMessage('');
             setIsQrTimeout(false);
             setQrAttempts(0);
-            
+
             const response = await connectionsService.createWhatsAppConnection({
                 connectionId,
                 connectionName,
@@ -61,7 +61,7 @@ export const useWhatsAppConnection = ({
                     setStatus('qr_ready');
                     setQrAttempts(response.qrAttempts || 0);
                     setMaxQrAttempts(response.maxQrAttempts || 4);
-                }                
+                }
             } else {
                 throw new Error(response.error || 'Error al crear la conexión');
             }
@@ -75,7 +75,7 @@ export const useWhatsAppConnection = ({
     }, [isConnected, connectionId, connectionName, tenantId, onError]);
 
     const restartConnection = useCallback(async () => {
-        if(!isConnected){
+        if (!isConnected) {
             setErrorMessage('No hay conexión Socket.IO');
             setStatus('error');
             return;
@@ -95,12 +95,17 @@ export const useWhatsAppConnection = ({
             });
 
             if (response.success) {
-                setStatus('waiting_qr');
                 console.log('Conexion reiniciada exitosamente:', response);
-            }else{
+                if (response.qr) {
+                    setQrCode(response.qr);
+                    setStatus('qr_ready');
+                } else {
+                    setStatus('waiting_qr');
+                }
+            } else {
                 throw new Error(response.error || 'Error al reiniciar la conexión');
             }
-        }catch (error: any) {
+        } catch (error: any) {
             console.error('Error restarting connection:', error);
             const errorMsg = error.message || 'Error al reiniciar la conexión';
             setErrorMessage(errorMsg);
@@ -118,10 +123,10 @@ export const useWhatsAppConnection = ({
     // Escuchar eventos WebSocket
     useEffect(() => {
         if (!isConnected) return;
-    
+
         const handleQRCode = (data: QRCodeEventData) => {
             console.log('QR Code received:', data);
-        
+
             // Verificar que el evento sea para este cliente
             if (data.clientId === clientId) {
                 setQrCode(data.qr);
@@ -132,40 +137,44 @@ export const useWhatsAppConnection = ({
         const handleQRTimeout = (data: QRTimeoutEventData) => {
             console.log('QR Timeout received:', data);
 
-            if (data.clientId === clientId) {
+            // El backend puede enviar clientId como número o string, comparamos ambos
+            const isForThisClient = data.clientId === clientId || String(data.clientId) === clientId;
+
+            if (isForThisClient) {
                 setStatus('timeout');
                 setIsQrTimeout(true);
-                //setQrCode('');
+                setQrAttempts(data.attempts);
+                setMaxQrAttempts(data.maxAttempts);
                 setErrorMessage(data.message || 'Se alcanzó el límite máximo de códigos QR. Haz clic en el botón para reintentar.');
-                onError?.(data.message || 'Qr timeout');
+                //onError?.(data.message || 'Qr timeout');
             }
         };
 
         const handleLoadingScreen = (data: LoadingScreenEventData) => {
-            if(data.clientId === clientId) {
+            if (data.clientId === clientId) {
                 setStatus('connecting');
             }
         };
 
         const handleAuthenticated = (data: AuthenticatedEventData) => {
-            if(data.clientId === clientId) {
+            if (data.clientId === clientId) {
                 setStatus('connected');
             }
         };
 
         const handleWhatsAppReady = (data: WhatsAppReadyEventData) => {
             console.log('WhatsApp ready event received:', data);
-            
+
             // Verificar que el evento sea para este cliente
             if (data.clientId === clientId) {
                 setStatus('connected');
                 onSuccess?.();
             }
         };
-    
+
         const handleWhatsAppDisconnected = (data: WhatsAppDisconnectedEventData) => {
             console.log('WhatsApp disconnected event received:', data);
-        
+
             // Verificar que el evento sea para este cliente
             if (data.clientId === clientId) {
                 setErrorMessage('WhatsApp se ha desconectado');
@@ -173,7 +182,7 @@ export const useWhatsAppConnection = ({
                 onError?.('WhatsApp se ha desconectado');
             }
         };
-    
+
         // Registrar listeners
         on(WHATSAPP_EVENTS.QR_CODE, handleQRCode);
         on(WHATSAPP_EVENTS.QR_TIMEOUT, handleQRTimeout);

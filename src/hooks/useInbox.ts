@@ -238,8 +238,9 @@ export const useInbox = (): UseInboxResult => {
 
   const sendMessage = useCallback(async (request: SendMessageRequest) => {
     try {
-      await inboxService.sendMessage(request);
-      
+      // Usar sendChatMessage que apunta a /api/chat/send-message
+      await inboxService.sendChatMessage(request);
+
       // Emit typing stop event
       if (isConnected) {
         emit('typing_stop', {

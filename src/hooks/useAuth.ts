@@ -19,7 +19,6 @@ export const useAuth = () => {
 
   const router = useRouter();
 
-
   // Verificar persistencia al cargar (solo en el cliente)
   useEffect(() => {
     setMounted(true);
@@ -101,9 +100,9 @@ export const useAuth = () => {
     if (!requiredRole) return true;
 
     const roleHierarchy = {
-      'admin': 3,
-      'supervisor': 2,
-      'agent': 1
+      'admin': 4,
+      'supervisor': 3,
+      'agent': 2
     };
 
     return roleHierarchy[user.role] >= roleHierarchy[requiredRole];

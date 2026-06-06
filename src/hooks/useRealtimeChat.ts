@@ -1,14 +1,16 @@
 'use client';
 
 import { useSocket } from '@/contexts/SocketIOContext';
-import type { 
-  Message, 
-  Conversation, 
-  TypingIndicator, 
+import type {
+  Message,
+  Conversation,
+  TypingIndicator,
   ChatEvent,
   MessageStatus,
   User
 } from '@/types/chat';
+import type { BackendMessagePayload } from '@/types/inbox';
+import { transformBackendMessageToFrontend } from '@/lib/utils/messageTransformer';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface RealtimeChatOptions {
@@ -77,6 +79,31 @@ export const useRealtimeChat = (options: RealtimeChatOptions = {}): UseRealtimeC
       options.onMessageReceived?.(message);
     };
 
+    /**
+     * Handler para mensajes enviados desde el backend
+     * Este es el evento que el backend emite cuando se envía un mensaje por API
+     * Canal: tenantId
+     * Evento: 'newMessage'
+     */
+    const handleBackendNewMessage = (payload: BackendMessagePayload) => {
+      console.log('📨 Backend new message received:', payload);
+
+      try {
+        // Transformar el mensaje del backend al formato del frontend
+        const frontendMessage = transformBackendMessageToFrontend(
+          payload.message,
+          payload.conversationId
+        );
+
+        console.log('✅ Transformed message:', frontendMessage);
+
+        // Llamar al callback con el mensaje transformado
+        options.onMessageReceived?.(frontendMessage);
+      } catch (error) {
+        console.error('❌ Error transforming backend message:', error);
+      }
+    };
+
     const handleMessageStatusUpdate = (data: { messageId: string; status: MessageStatus }) => {
       console.log('📋 Message status update:', data);
       options.onMessageStatusUpdate?.(data.messageId, data.status);
@@ -119,6 +146,7 @@ export const useRealtimeChat = (options: RealtimeChatOptions = {}): UseRealtimeC
 
     // Register event listeners
     on('message:new', handleNewMessage);
+    on('newMessage', handleBackendNewMessage); // Evento del backend para mensajes enviados por API
     on('message:status', handleMessageStatusUpdate);
     on('typing:start', handleTypingStart);
     on('typing:stop', handleTypingStop);
@@ -128,6 +156,7 @@ export const useRealtimeChat = (options: RealtimeChatOptions = {}): UseRealtimeC
     // Cleanup listeners
     return () => {
       off('message:new', handleNewMessage);
+      off('newMessage', handleBackendNewMessage);
       off('message:status', handleMessageStatusUpdate);
       off('typing:start', handleTypingStart);
       off('typing:stop', handleTypingStop);
