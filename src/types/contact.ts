@@ -2,22 +2,22 @@ import { ProviderType } from './connections';
 
 // Contact related interfaces
 export interface Contact {
-  id: string;
-  name: string;
-  phone?: string;
-  email?: string;
-  avatar?: string;
-  department: string;
-  assignedAgent?: string;
-  status: 'active' | 'inactive' | 'blocked';
-  tags: string[];
-  notes: ContactNote[];
-  channels: ContactChannel[];
-  metadata: ContactMetadata;
-  createdAt: string;
-  updatedAt: string;
-  lastInteraction?: string;
-  totalInteractions?: number;
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    avatar?: string;
+    department: string;
+    assignedAgent?: string;
+    status: 'active' | 'inactive' | 'blocked';
+    tags: string[];
+    notes: ContactNote[];
+    channels: ContactChannel[];
+    metadata: ContactMetadata;
+    createdAt: string;
+    updatedAt: string;
+    lastInteraction?: string;
+    totalInteractions?: number;
 }
 
 export interface ContactNote {

@@ -31,6 +31,7 @@ export interface RestartWhatsAppConnectionResponse {
     success: boolean;
     clientId: string;
     message: string;
+    qr?: string;
 }
 
 // Error response type
