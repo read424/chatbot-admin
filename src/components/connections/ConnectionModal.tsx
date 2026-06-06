@@ -548,7 +548,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
 
               {!webhookConfig && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No hay webhook configurado. Haz clic en "Configurar" para añadir uno.
+                  No hay webhook configurado. Haz clic en &quot;Configurar&quot; para añadir uno.
                 </p>
               )}
             </div>

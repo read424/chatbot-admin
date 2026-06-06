@@ -57,7 +57,8 @@ const CHANNEL_LABELS: Record<ProviderType, string> = {
     whatsapp_api: 'WhatsApp Business',
     instagram: 'Instagram',
     facebook: 'Facebook Messenger',
-    telegram: 'Telegram'
+    telegram: 'Telegram',
+    chatweb: 'Chat Web'
 };
 
 export const CustomerInfo: React.FC<CustomerInfoProps> = ({
@@ -177,7 +178,7 @@ export const CustomerInfo: React.FC<CustomerInfoProps> = ({
     // Early return if no data
     if (!conversation && !contact) {
         return (
-          <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center">
+          <div className="w-80 h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center">
             <div className="text-center text-gray-500 dark:text-gray-400">
               <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Selecciona una conversación para ver los detalles</p>
@@ -193,21 +194,21 @@ export const CustomerInfo: React.FC<CustomerInfoProps> = ({
     const displayEmail = displayContact?.email;
 
     return (
-        <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+        <div className="w-80 h-full border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col">
             {/* Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Información del Cliente
-                </h3>
-                {conversation && (
-                <div className="flex items-center space-x-1">
-                    <span className={`px-2 py-1 text-xs rounded-full ${PRIORITY_COLORS[selectedPriority]}`}>
-                    {PRIORITY_LABELS[selectedPriority]}
-                    </span>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Información del Cliente
+                    </h3>
+                    {conversation && (
+                    <div className="flex items-center space-x-1">
+                        <span className={`px-2 py-1 text-xs rounded-full ${PRIORITY_COLORS[selectedPriority]}`}>
+                        {PRIORITY_LABELS[selectedPriority]}
+                        </span>
+                    </div>
+                    )}
                 </div>
-                )}
-            </div>
             </div>
     
             {/* Loading State */}

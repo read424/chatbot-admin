@@ -29,7 +29,7 @@ interface HeaderProps {
   onNotificationClick?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
+export const Header: React.FC<HeaderProps> = ({
   user,
   notifications = [],
   unreadNotificationCount = 0,

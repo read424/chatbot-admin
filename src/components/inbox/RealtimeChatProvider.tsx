@@ -77,7 +77,8 @@ export const RealtimeChatProvider: React.FC<RealtimeChatProviderProps> = ({
     onConversationUpdate: (conversationUpdates) => {
       console.log('💬 Conversation updated in provider:', conversationUpdates);
       if (conversationId && conversationUpdates) {
-        updateConversation(conversationId, conversationUpdates);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        updateConversation(conversationId, conversationUpdates as any);
       }
     }
   });

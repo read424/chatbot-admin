@@ -260,7 +260,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-3">Opciones disponibles:</p>
                   <div className="space-y-2">
-                    {department.options.filter(opt => opt.isActive).map((option, index) => (
+                    {department.options.filter(opt => opt.isActive).map((option) => (
                       <div
                         key={option.id}
                         className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg"
@@ -290,7 +290,7 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                   ¿Eliminar Departamento?
                 </h3>
                 <p className="text-sm text-gray-600">
-                  Se eliminará "{department.name}" y todas sus configuraciones
+                  Se eliminará &quot;{department.name}&quot; y todas sus configuraciones
                 </p>
               </div>
             </div>

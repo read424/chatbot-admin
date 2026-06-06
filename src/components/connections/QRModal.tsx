@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 interface QRModalProps {
     isOpen: boolean;
     onClose: () => void;
-    connectionId: string;
+    connectionId: number; // Cambio de string a number para v2
     connectionName: string;
     connectionType: ProviderType;
     tenantId: string;
@@ -172,7 +172,7 @@ export const QRModal: React.FC<QRModalProps> = ({
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">3</span>
-                                <span>Toca "Vincular un dispositivo"</span>
+                                <span>Toca &quot;Vincular un dispositivo&quot;</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">4</span>
@@ -205,28 +205,28 @@ export const QRModal: React.FC<QRModalProps> = ({
 
             case 'timeout':
                 return (
-                    <div className="flex flex-col items-center py-8">
-                        {/* QR Container con overlay */}
-                        <div className="relative mb-6">
-                            <div className="bg-white p-4 rounded-lg shadow-lg">
+                    <div className="flex flex-row items-center gap-6">
+                        {/* QR Code a la izquierda con overlay de refresh */}
+                        <div className="flex-shrink-0">
+                            <div className="bg-white p-4 rounded-lg shadow-lg relative">
                                 <div className="w-48 h-48 bg-gray-100 flex items-center justify-center relative">
                                     {/* Mostrar el último QR si existe, sino mostrar placeholder */}
                                     {qrCode ? (
                                         <img
                                             src={qrCode}
                                             alt="QR Code"
-                                            className="w-full h-full object-contain"
+                                            className="w-full h-full object-contain opacity-30"
                                         />
                                     ) : (
                                         <QrCode className="w-16 h-16 text-gray-300" />
                                     )}
-                                    
-                                    {/* Overlay semitransparente */}
-                                    <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded">
+
+                                    {/* Overlay semitransparente con botón de refresh */}
+                                    <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded">
                                         <button
                                             onClick={handleRetryConnection}
                                             disabled={status === 'creating'}
-                                            className="flex flex-col items-center justify-center p-6 bg-blue-50 hover:bg-blue-100 transition-colors rounded-lg border-2 border-dashed border-blue-300 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex flex-col items-center justify-center p-6 bg-blue-50 bg-opacity-90 hover:bg-blue-100 hover:bg-opacity-95 transition-colors rounded-lg border-2 border-dashed border-blue-300 hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                                         >
                                             {status === 'creating' ? (
                                                 <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
@@ -238,6 +238,31 @@ export const QRModal: React.FC<QRModalProps> = ({
                                             </span>
                                         </button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Instrucciones a la derecha */}
+                        <div className="flex-1">
+                            <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg font-medium">
+                                {qrStatus.message}
+                            </p>
+                            <div className="text-sm text-gray-500 dark:text-gray-500 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">1</span>
+                                    <span>Abre WhatsApp en tu teléfono</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">2</span>
+                                    <span>Ve a Configuración → Dispositivos vinculados</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">3</span>
+                                    <span>Toca &quot;Vincular un dispositivo&quot;</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="bg-blue-100 text-blue-800 rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium">4</span>
+                                    <span>Escanea este código QR</span>
                                 </div>
                             </div>
                         </div>
@@ -270,48 +295,38 @@ export const QRModal: React.FC<QRModalProps> = ({
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
-            {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
-                <div>
-                    <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
-                        Conectar {connectionName}
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Vincula tu cuenta de WhatsApp
-                    </p>
+                {/* Header */}
+                <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-600">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                            Conectar {connectionName}
+                        </h2>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Vincula tu cuenta de WhatsApp
+                        </p>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                    <X className="w-6 h-6" />
-                </button>
-            </div>
     
-            {/* Content */}
-            <div className="p-6">
-                {!isConnected ? (
-                <div className="flex flex-col items-center py-8">
-                    <AlertCircle className="w-12 h-12 text-orange-500 mb-4" />
-                    <p className="text-orange-600 dark:text-orange-400 text-center">
-                        No hay conexión WebSocket. Verifica tu conexión.
-                    </p>
+                {/* Content */}
+                <div className="p-6">
+                    {!isConnected ? (
+                    <div className="flex flex-col items-center py-8">
+                        <AlertCircle className="w-12 h-12 text-orange-500 mb-4" />
+                        <p className="text-orange-600 dark:text-orange-400 text-center">
+                            No hay conexión WebSocket. Verifica tu conexión.
+                        </p>
+                    </div>
+                    ) : (
+                        getStatusContent()
+                    )}
                 </div>
-                ) : (
-                getStatusContent()
-                )}
             </div>
-    
-            {/* Footer - Siempre visible */}
-            <div className="flex justify-end p-6 border-t border-gray-200 dark:border-gray-600">
-                <button
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                >
-                Cerrar
-                </button>
-            </div>
-            </div>
-      </div>
+        </div>
     );
 }
