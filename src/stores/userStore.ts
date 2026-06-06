@@ -3,215 +3,215 @@
 import { create } from 'zustand';
 
 export interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'supervisor' | 'agent';
-  status: 'active' | 'inactive';
-  avatar?: string;
-  phone?: string;
-  department?: string;
-  hireDate: string;
-  lastLogin?: string;
-  permissions: string[];
-  stats: {
-    totalChats: number;
-    activeChats: number;
-    avgResponseTime: number;
-    satisfaction: number;
-  };
-  activityMetrics?: {
-    loginCount: number;
-    totalChatTime: number;
-    availability: number;
-    lastActivity: string;
-    currentStatus: 'online' | 'offline' | 'away' | 'busy';
-  };
+    id: string;
+    email: string;
+    name: string;
+    firstName: string;
+    lastName: string;
+    role: 'admin' | 'supervisor' | 'agent';
+    status: 'active' | 'inactive';
+    avatar?: string;
+    phone?: string;
+    department?: string;
+    hireDate: string;
+    lastLogin?: string;
+    permissions: string[];
+    stats: {
+        totalChats: number;
+        activeChats: number;
+        avgResponseTime: number;
+        satisfaction: number;
+    };
+    activityMetrics?: {
+        loginCount: number;
+        totalChatTime: number;
+        availability: number;
+        lastActivity: string;
+        currentStatus: 'online' | 'offline' | 'away' | 'busy';
+    };
 }
 
 interface UserState {
-  // State
-  users: UserProfile[];
-  selectedUser: UserProfile | null;
-  isLoading: boolean;
-  error: string | null;
+    // State
+    users: UserProfile[];
+    selectedUser: UserProfile | null;
+    isLoading: boolean;
+    error: string | null;
   
-  // Filters
-  filters: {
-    search: string;
-    role: 'all' | 'admin' | 'supervisor' | 'agent';
-    status: 'all' | 'active' | 'inactive';
-    department: 'all' | string;
-  };
+    // Filters
+    filters: {
+        search: string;
+        role: 'all' | 'admin' | 'supervisor' | 'agent';
+        status: 'all' | 'active' | 'inactive';
+        department: 'all' | string;
+    };
   
-  // Actions
-  fetchUsers: () => Promise<void>;
-  createUser: (userData: Omit<UserProfile, 'id' | 'stats'>) => Promise<boolean>;
-  updateUser: (id: string, updates: Partial<UserProfile>) => Promise<boolean>;
-  deleteUser: (id: string) => Promise<boolean>;
-  toggleUserStatus: (id: string) => Promise<boolean>;
-  bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => Promise<boolean>;
-  bulkDeleteUsers: (userIds: string[]) => Promise<boolean>;
-  setSelectedUser: (user: UserProfile | null) => void;
-  setFilters: (filters: Partial<UserState['filters']>) => void;
-  clearError: () => void;
+    // Actions
+    fetchUsers: () => Promise<void>;
+    createUser: (userData: Omit<UserProfile, 'id' | 'stats'>) => Promise<boolean>;
+    updateUser: (id: string, updates: Partial<UserProfile>) => Promise<boolean>;
+    deleteUser: (id: string) => Promise<boolean>;
+    toggleUserStatus: (id: string) => Promise<boolean>;
+    bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => Promise<boolean>;
+    bulkDeleteUsers: (userIds: string[]) => Promise<boolean>;
+    setSelectedUser: (user: UserProfile | null) => void;
+    setFilters: (filters: Partial<UserState['filters']>) => void;
+    clearError: () => void;
   
-  // Utilities
-  getFilteredUsers: () => UserProfile[];
-  getUserById: (id: string) => UserProfile | undefined;
-  getUserStats: () => {
-    total: number;
-    active: number;
-    inactive: number;
-    byRole: Record<string, number>;
-  };
-  updateUserActivity: (userId: string, activity: Partial<UserProfile['activityMetrics']>) => void;
-  getUserActivityMetrics: (userId: string) => UserProfile['activityMetrics'] | undefined;
+    // Utilities
+    getFilteredUsers: () => UserProfile[];
+    getUserById: (id: string) => UserProfile | undefined;
+    getUserStats: () => {
+        total: number;
+        active: number;
+        inactive: number;
+        byRole: Record<string, number>;
+    };
+    updateUserActivity: (userId: string, activity: Partial<UserProfile['activityMetrics']>) => void;
+    getUserActivityMetrics: (userId: string) => UserProfile['activityMetrics'] | undefined;
 }
 
 // Datos iniciales de usuarios
 const initialUsers: UserProfile[] = [
-  {
-    id: '1',
-    email: 'admin@inbox.com',
-    name: 'Admin Usuario',
-    firstName: 'Admin',
-    lastName: 'Usuario',
-    role: 'admin',
-    status: 'active',
-    phone: '+51 999888777',
-    department: 'Administración',
-    hireDate: '2023-01-15',
-    lastLogin: '2024-08-24 14:30',
-    permissions: ['all'],
-    stats: {
-      totalChats: 0,
-      activeChats: 0,
-      avgResponseTime: 0,
-      satisfaction: 0
+    {
+        id: '1',
+        email: 'admin@inbox.com',
+        name: 'Admin Usuario',
+        firstName: 'Admin',
+        lastName: 'Usuario',
+        role: 'admin',
+        status: 'active',
+        phone: '+51 999888777',
+        department: 'Administración',
+        hireDate: '2023-01-15',
+        lastLogin: '2024-08-24 14:30',
+        permissions: ['all'],
+        stats: {
+            totalChats: 0,
+            activeChats: 0,
+            avgResponseTime: 0,
+            satisfaction: 0
+        },
+        activityMetrics: {
+            loginCount: 0,
+            totalChatTime: 0,
+            availability: 100,
+            lastActivity: '2024-08-24 14:30',
+            currentStatus: 'offline'
+        }
     },
-    activityMetrics: {
-      loginCount: 0,
-      totalChatTime: 0,
-      availability: 100,
-      lastActivity: '2024-08-24 14:30',
-      currentStatus: 'offline'
-    }
-  },
-  {
-    id: '2',
-    email: 'supervisor@inbox.com',
-    name: 'Ana López',
-    firstName: 'Ana',
-    lastName: 'López',
-    role: 'supervisor',
-    status: 'active',
-    phone: '+51 987654321',
-    department: 'Ventas',
-    hireDate: '2023-03-10',
-    lastLogin: '2024-08-24 13:45',
-    permissions: ['manage_agents', 'view_reports', 'assign_chats'],
-    stats: {
-      totalChats: 245,
-      activeChats: 12,
-      avgResponseTime: 2.3,
-      satisfaction: 4.7
+    {
+        id: '2',
+        email: 'supervisor@inbox.com',
+        name: 'Ana López',
+        firstName: 'Ana',
+        lastName: 'López',
+        role: 'supervisor',
+        status: 'active',
+        phone: '+51 987654321',
+        department: 'Ventas',
+        hireDate: '2023-03-10',
+        lastLogin: '2024-08-24 13:45',
+        permissions: ['manage_agents', 'view_reports', 'assign_chats'],
+        stats: {
+            totalChats: 245,
+            activeChats: 12,
+            avgResponseTime: 2.3,
+            satisfaction: 4.7
+        },
+        activityMetrics: {
+            loginCount: 28,
+            totalChatTime: 420,
+            availability: 95,
+            lastActivity: '2024-08-24 13:45',
+            currentStatus: 'online'
+        }
     },
-    activityMetrics: {
-      loginCount: 28,
-      totalChatTime: 420,
-      availability: 95,
-      lastActivity: '2024-08-24 13:45',
-      currentStatus: 'online'
-    }
-  },
-  {
-    id: '3',
-    email: 'agente@inbox.com',
-    name: 'Juan Pérez',
-    firstName: 'Juan',
-    lastName: 'Pérez',
-    role: 'agent',
-    status: 'active',
-    phone: '+51 912345678',
-    department: 'Ventas',
-    hireDate: '2023-06-20',
-    lastLogin: '2024-08-24 15:20',
-    permissions: ['handle_chats', 'edit_profile'],
-    stats: {
-      totalChats: 189,
-      activeChats: 8,
-      avgResponseTime: 3.1,
-      satisfaction: 4.5
+    {
+        id: '3',
+        email: 'agente@inbox.com',
+        name: 'Juan Pérez',
+        firstName: 'Juan',
+        lastName: 'Pérez',
+        role: 'agent',
+        status: 'active',
+        phone: '+51 912345678',
+        department: 'Ventas',
+        hireDate: '2023-06-20',
+        lastLogin: '2024-08-24 15:20',
+        permissions: ['handle_chats', 'edit_profile'],
+        stats: {
+            totalChats: 189,
+            activeChats: 8,
+            avgResponseTime: 3.1,
+            satisfaction: 4.5
+        },
+        activityMetrics: {
+            loginCount: 22,
+            totalChatTime: 380,
+            availability: 88,
+            lastActivity: '2024-08-24 15:20',
+            currentStatus: 'online'
+        }
     },
-    activityMetrics: {
-      loginCount: 22,
-      totalChatTime: 380,
-      availability: 88,
-      lastActivity: '2024-08-24 15:20',
-      currentStatus: 'online'
-    }
-  },
-  {
-    id: '4',
-    email: 'pedro.silva@inbox.com',
-    name: 'Pedro Silva',
-    firstName: 'Pedro',
-    lastName: 'Silva',
-    role: 'agent',
-    status: 'active',
-    phone: '+51 998877665',
-    department: 'Ventas',
-    hireDate: '2023-08-15',
-    lastLogin: '2024-08-24 12:10',
-    permissions: ['handle_chats', 'edit_profile'],
-    stats: {
-      totalChats: 156,
-      activeChats: 6,
-      avgResponseTime: 2.8,
-      satisfaction: 4.6
+    {
+        id: '4',
+        email: 'pedro.silva@inbox.com',
+        name: 'Pedro Silva',
+        firstName: 'Pedro',
+        lastName: 'Silva',
+        role: 'agent',
+        status: 'active',
+        phone: '+51 998877665',
+        department: 'Ventas',
+        hireDate: '2023-08-15',
+        lastLogin: '2024-08-24 12:10',
+        permissions: ['handle_chats', 'edit_profile'],
+        stats: {
+            totalChats: 156,
+            activeChats: 6,
+            avgResponseTime: 2.8,
+            satisfaction: 4.6
+        },
+        activityMetrics: {
+            loginCount: 25,
+            totalChatTime: 340,
+            availability: 92,
+            lastActivity: '2024-08-24 12:10',
+            currentStatus: 'away'
+        }
     },
-    activityMetrics: {
-      loginCount: 25,
-      totalChatTime: 340,
-      availability: 92,
-      lastActivity: '2024-08-24 12:10',
-      currentStatus: 'away'
+    {
+        id: '5',
+        email: 'carmen.torres@inbox.com',
+        name: 'Carmen Torres',
+        firstName: 'Carmen',
+        lastName: 'Torres',
+        role: 'agent',
+        status: 'inactive',
+        phone: '+51 987123456',
+        department: 'Ventas',
+        hireDate: '2023-05-01',
+        lastLogin: '2024-08-20 16:45',
+        permissions: ['handle_chats', 'edit_profile'],
+        stats: {
+            totalChats: 201,
+            activeChats: 0,
+            avgResponseTime: 4.2,
+            satisfaction: 4.1
+        },
+        activityMetrics: {
+            loginCount: 15,
+            totalChatTime: 280,
+            availability: 65,
+            lastActivity: '2024-08-20 16:45',
+            currentStatus: 'offline'
+        }
     }
-  },
-  {
-    id: '5',
-    email: 'carmen.torres@inbox.com',
-    name: 'Carmen Torres',
-    firstName: 'Carmen',
-    lastName: 'Torres',
-    role: 'agent',
-    status: 'inactive',
-    phone: '+51 987123456',
-    department: 'Ventas',
-    hireDate: '2023-05-01',
-    lastLogin: '2024-08-20 16:45',
-    permissions: ['handle_chats', 'edit_profile'],
-    stats: {
-      totalChats: 201,
-      activeChats: 0,
-      avgResponseTime: 4.2,
-      satisfaction: 4.1
-    },
-    activityMetrics: {
-      loginCount: 15,
-      totalChatTime: 280,
-      availability: 65,
-      lastActivity: '2024-08-20 16:45',
-      currentStatus: 'offline'
-    }
-  }
 ];
 
 export const useUserStore = create<UserState>((set, get) => ({
-  // Initial state
+    // Initial state
   users: initialUsers,
   selectedUser: null,
   isLoading: false,

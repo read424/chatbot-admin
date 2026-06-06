@@ -1,5 +1,6 @@
 'use client';
 
+import { authService } from '@/lib/api/auth';
 import type { User } from '@/lib/api/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -68,84 +69,77 @@ const demoUsers: Record<string, { password: string; user: User }> = {
 };
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      error: null,
-
-      // Login function
-      login: async (email: string, password: string): Promise<boolean> => {
-        set({ isLoading: true, error: null });
-
-        try {
-          // Simular delay de API
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          const demoUser = demoUsers[email.toLowerCase()];
-          
-          if (!demoUser || demoUser.password !== password) {
-            set({ 
-              error: 'Credenciales inválidas. Intenta con admin@inbox.com / admin123',
-              isLoading: false 
-            });
-            return false;
-          }
-
-          // Login exitoso
-          set({
-            user: demoUser.user,
-            isAuthenticated: true,
+    persist(
+        (set, get) => ({
+            // Initial state
+            user: null,
+            isAuthenticated: false,
             isLoading: false,
-            error: null
-          });
+            error: null,
 
-          return true;
-        } catch (error) {
-          set({
-            error: 'Error de conexión. Intenta nuevamente.',
-            isLoading: false
-          });
-          return false;
+            // Login function
+            login: async (email: string, password: string): Promise<boolean> => {
+                set({ isLoading: true, error: null });
+
+                try {
+                    // Llamar al servicio de autenticación que conecta con el backend
+                    const response = await authService.login({ email, password });
+
+                    // Actualizar estado con la respuesta del backend
+                    set({
+                        user: response.user,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        error: null
+                    });
+
+                    return true;
+                } catch (error: any) {
+                    set({
+                        error: error.message || 'Error al iniciar sesión',
+                        isLoading: false,
+                        user: null,
+                        isAuthenticated: false
+                    });
+                    return false;
+                }
+            },
+
+            // Logout function
+            logout: () => {
+                // Llamar al servicio para limpiar localStorage
+                authService.logout();
+
+                // Limpiar estado de Zustand
+                set({
+                user: null,
+                isAuthenticated: false,
+                error: null
+                });
+                
+                // Limpiar storage persistente adicional
+                if (typeof window !== 'undefined') {
+                localStorage.removeItem('auth-storage');
+                localStorage.removeItem('sessionExpiry');
+                localStorage.removeItem('rememberMe');
+                }
+            },
+
+            // Clear error
+            clearError: () => set({ error: null }),
+
+            // Set user (para persistencia)
+            setUser: (user: User) => set({ 
+                user, 
+                isAuthenticated: true 
+            })
+        }),
+        {
+            name: 'auth-storage', // nombre único para el storage
+            partialize: (state) => ({ 
+                user: state.user, 
+                isAuthenticated: state.isAuthenticated 
+            }), // solo persistir user e isAuthenticated
         }
-      },
-
-      // Logout function
-      logout: () => {
-        set({
-          user: null,
-          isAuthenticated: false,
-          error: null
-        });
-        
-        // Limpiar el storage persistente
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth-storage');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('token');
-          localStorage.removeItem('sessionExpiry');
-          localStorage.removeItem('rememberMe');
-        }
-      },
-
-      // Clear error
-      clearError: () => set({ error: null }),
-
-      // Set user (para persistencia)
-      setUser: (user: User) => set({ 
-        user, 
-        isAuthenticated: true 
-      })
-    }),
-    {
-      name: 'auth-storage', // nombre único para el storage
-      partialize: (state) => ({ 
-        user: state.user, 
-        isAuthenticated: state.isAuthenticated 
-      }), // solo persistir user e isAuthenticated
-    }
-  )
+    )
 );
